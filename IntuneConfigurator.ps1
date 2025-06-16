@@ -213,6 +213,25 @@ function Connect-ToMSGraph {
     }
 }
 
+function Get-TenantId {
+    try {
+        $uri = "https://graph.microsoft.com/v1.0/organization"
+        $response = Invoke-MgGraphRequest -Uri $uri -Method GET -ErrorAction Stop
+        $tenantId = $response.value[0].id
+        if ($tenantId) {
+            Write-Host "Retrieved Tenant ID: $tenantId" -ForegroundColor Green
+            return $tenantId
+        } else {
+            Write-Error "Failed to retrieve Tenant ID: No organization data returned"
+            return $null
+        }
+    }
+    catch {
+        Write-Error "Failed to retrieve Tenant ID: $($_.Exception.Message)"
+        return $null
+    }
+}
+
 # Function to create configuration policy from JSON (ENHANCED VERSION with better error handling)
 function New-ConfigurationPolicyFromJson {
     param(
@@ -233,13 +252,36 @@ function New-ConfigurationPolicyFromJson {
             $isEndpointSecurity = $true
         }
         
-        # Create the policy body - include templateReference if it exists
+        # Create a deep copy of PolicyData to avoid modifying the original
+        $policyBody = $PolicyData | ConvertTo-Json -Depth 20 | ConvertFrom-Json
+        
+        # Handle OneDrive silently move Windows known folders policy
+        if ($PolicyName -like "*OneDrive silently move Windows known folders*") {
+            Write-Host "Detected OneDrive policy - retrieving Tenant ID..." -ForegroundColor Yellow
+            $tenantId = Get-TenantId
+            if (-not $tenantId) {
+                Write-Error "Cannot proceed with OneDrive policy creation without Tenant ID"
+                return $null
+            }
+            
+            # Find and update the tenant ID setting
+            foreach ($setting in $policyBody.settings) {
+                if ($setting.'@odata.type' -eq "#microsoft.graph.deviceManagementConfigurationSimpleSettingInstance" -and 
+                    $setting.settingDefinitionId -eq "device_vendor_msft_policy_config_onedrivengscv2.updates~policy~onedrivengsc_kfmoptinnowizard_kfmoptinnowizard_textbox") {
+                    $setting.simpleSettingValue.value = $tenantId
+                    Write-Host "Inserted Tenant ID ($tenantId) into OneDrive policy settings" -ForegroundColor Green
+                    break
+                }
+            }
+        }
+        
+        # Create the policy body
         $policyBody = @{
             name = $PolicyName
             description = $PolicyData.description
             platforms = $PolicyData.platforms
             technologies = $PolicyData.technologies
-            settings = $PolicyData.settings
+            settings = $policyBody.settings
         }
         
         # Add templateReference if this is an endpoint security policy
@@ -274,7 +316,6 @@ function New-ConfigurationPolicyFromJson {
             }
         }
         catch {
-            # Basic error handling
             Write-Error "Graph API request failed: $($_.Exception.Message)"
             throw "Graph API request failed: $($_.Exception.Message)"
         }
