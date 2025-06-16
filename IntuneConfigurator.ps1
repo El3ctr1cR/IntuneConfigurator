@@ -1,4 +1,3 @@
-# Define required modules and scopes
 $Modules = @(
     @{Name = "Microsoft.Graph.Authentication"; MinVersion = "1.0.0"},
     @{Name = "Microsoft.Graph.DeviceManagement"; MinVersion = "1.0.0"},
@@ -20,7 +19,8 @@ $GraphScopes = @(
 )
 
 # Configuration folder path
-$ConfigFolderPath = Join-Path $env:APPDATA "IntuneConfigurator"
+$ConfigFolderPath = Join-Path $env:TEMP "IntuneConfigurator"
+$GitHubJsonUrl = "https://api.github.com/repos/El3ctr1cR/IntuneConfigurator/contents/json"
 
 # Install required modules if not already installed
 foreach ($module in $Modules) {
@@ -46,18 +46,73 @@ foreach ($module in $Modules) {
     }
 }
 
-# Function to ensure configuration folder exists
+# Function to ensure configuration folder exists and download JSON files from GitHub
 function Initialize-ConfigFolder {
     try {
-        if (-not (Test-Path $ConfigFolderPath)) {
-            New-Item -ItemType Directory -Path $ConfigFolderPath -Force | Out-Null
-            Write-Host "Created configuration folder: $ConfigFolderPath" -ForegroundColor Green
+        # Clean up existing folder if it exists
+        if (Test-Path $ConfigFolderPath) {
+            Remove-Item -Path $ConfigFolderPath -Recurse -Force -ErrorAction SilentlyContinue
         }
-        return $true
+        
+        # Create fresh configuration folder
+        New-Item -ItemType Directory -Path $ConfigFolderPath -Force | Out-Null
+        
+        # Download JSON files from GitHub
+        Write-Host "Downloading baseline configuration files from El3ctr1cR's GitHub..." -ForegroundColor Yellow
+        
+        try {
+            # Get list of files from GitHub API
+            $response = Invoke-RestMethod -Uri $GitHubJsonUrl -Method GET -ErrorAction Stop
+            
+            # Filter for JSON files only
+            $jsonFiles = $response | Where-Object { $_.name -like "*.json" -and $_.type -eq "file" }
+            
+            if ($jsonFiles.Count -eq 0) {
+                Write-Error "No JSON files found in the GitHub repository"
+                return $false
+            }
+            
+            Write-Host "Found $($jsonFiles.Count) configuration file(s) to download" -ForegroundColor Cyan
+            
+            # Download each JSON file
+            foreach ($file in $jsonFiles) {
+                try {
+                    $localFilePath = Join-Path $ConfigFolderPath $file.name
+                    $fileContent = Invoke-RestMethod -Uri $file.download_url -Method GET -ErrorAction Stop
+                    
+                    # Save file content
+                    $fileContent | ConvertTo-Json -Depth 20 | Out-File -FilePath $localFilePath -Encoding UTF8 -ErrorAction Stop
+                    Write-Host "Downloaded: $($file.name)" -ForegroundColor Green
+                }
+                catch {
+                    Write-Warning "Failed to download $($file.name): $($_.Exception.Message)"
+                    continue
+                }
+            }
+            
+            return $true
+        }
+        catch {
+            Write-Error "Failed to access GitHub repository: $($_.Exception.Message)"
+            return $false
+        }
     }
     catch {
-        Write-Error "Failed to create configuration folder: $($_.Exception.Message)"
+        Write-Error "Failed to initialize configuration folder: $($_.Exception.Message)"
         return $false
+    }
+}
+
+# Function to clean up temporary files
+function Remove-ConfigFolder {
+    try {
+        if (Test-Path $ConfigFolderPath) {
+            Remove-Item -Path $ConfigFolderPath -Recurse -Force -ErrorAction Stop
+            Write-Host "Cleaned up temporary files" -ForegroundColor Gray
+        }
+    }
+    catch {
+        Write-Warning "Could not clean up temporary folder: $($_.Exception.Message)"
     }
 }
 
@@ -67,8 +122,7 @@ function Get-ConfigurationPoliciesFromFolder {
         $configFiles = Get-ChildItem -Path $ConfigFolderPath -Filter "*.json" -ErrorAction Stop
         
         if ($configFiles.Count -eq 0) {
-            Write-Warning "No JSON configuration files found in: $ConfigFolderPath"
-            Write-Host "Please place your Intune configuration JSON files in this folder and run the script again." -ForegroundColor Yellow
+            Write-Warning "No JSON configuration files found"
             return @()
         }
         
@@ -76,8 +130,6 @@ function Get-ConfigurationPoliciesFromFolder {
         
         foreach ($file in $configFiles) {
             try {
-                Write-Host "Loading configuration from: $($file.Name)" -ForegroundColor Cyan
-                
                 # Read and parse JSON file
                 $jsonContent = Get-Content -Path $file.FullName -Raw -ErrorAction Stop
                 $policyData = $jsonContent | ConvertFrom-Json -ErrorAction Stop
@@ -104,7 +156,6 @@ function Get-ConfigurationPoliciesFromFolder {
                 }
                 
                 $policies += $policy
-                Write-Host "✓ Loaded policy: $($policy.Name)" -ForegroundColor Green
             }
             catch {
                 Write-Warning "Failed to load configuration from $($file.Name): $($_.Exception.Message)"
@@ -120,86 +171,13 @@ function Get-ConfigurationPoliciesFromFolder {
     }
 }
 
-# Function to create sample configuration files
-function New-SampleConfigurationFiles {
-    param(
-        [switch]$Force
-    )
-    
-    try {
-        $sampleConfigs = @{
-            "Edge-Force-SignIn.json" = @{
-                description = "Forces users to sign into Microsoft Edge"
-                platforms = "windows10"
-                technologies = "mdm"
-                templateReference = @{
-                    templateId = ""
-                    templateFamily = "none"
-                    templateDisplayName = $null
-                    templateDisplayVersion = $null
-                }
-                settings = @(
-                    @{
-                        "@odata.type" = "#microsoft.graph.deviceManagementConfigurationSetting"
-                        settingInstance = @{
-                            "@odata.type" = "#microsoft.graph.deviceManagementConfigurationChoiceSettingInstance"
-                            settingDefinitionId = "device_vendor_msft_policy_config_microsoft_edge~policy~microsoft_edge_browsersignin"
-                            settingInstanceTemplateReference = $null
-                            choiceSettingValue = @{
-                                settingValueTemplateReference = $null
-                                value = "device_vendor_msft_policy_config_microsoft_edge~policy~microsoft_edge_browsersignin_1"
-                                children = @(
-                                    @{
-                                        "@odata.type" = "#microsoft.graph.deviceManagementConfigurationChoiceSettingInstance"
-                                        settingDefinitionId = "device_vendor_msft_policy_config_microsoft_edge~policy~microsoft_edge_browsersignin_browsersignin"
-                                        settingInstanceTemplateReference = $null
-                                        choiceSettingValue = @{
-                                            settingValueTemplateReference = $null
-                                            value = "device_vendor_msft_policy_config_microsoft_edge~policy~microsoft_edge_browsersignin_browsersignin_2"
-                                            children = @()
-                                        }
-                                    }
-                                )
-                            }
-                        }
-                    }
-                )
-            }
-        }
-        
-        $created = 0
-        foreach ($fileName in $sampleConfigs.Keys) {
-            $filePath = Join-Path $ConfigFolderPath $fileName
-            
-            if ((Test-Path $filePath) -and -not $Force) {
-                Write-Host "Sample file already exists: $fileName (use -Force to overwrite)" -ForegroundColor Yellow
-                continue
-            }
-            
-            $sampleConfigs[$fileName] | ConvertTo-Json -Depth 20 | Out-File -FilePath $filePath -Encoding UTF8
-            Write-Host "Created sample configuration: $fileName" -ForegroundColor Green
-            $created++
-        }
-        
-        if ($created -gt 0) {
-            Write-Host "`nCreated $created sample configuration file(s) in: $ConfigFolderPath" -ForegroundColor Cyan
-            Write-Host "You can use these as templates for your own configurations." -ForegroundColor Gray
-        }
-        
-        return $created
-    }
-    catch {
-        Write-Error "Failed to create sample configuration files: $($_.Exception.Message)"
-        return 0
-    }
-}
-
 # Function to connect to Microsoft Graph
 function Connect-ToMSGraph {
     try {
         # Connect with required scopes
+        Write-Host "Connecting to Microsoft Graph..." -ForegroundColor Yellow
         Connect-MgGraph -Scopes $GraphScopes -ErrorAction Stop
-        Write-Host "Successfully connected to Microsoft Graph with specified scopes" -ForegroundColor Green
+        Write-Host "Successfully connected to Microsoft Graph" -ForegroundColor Green
         return $true
     }
     catch {
@@ -386,39 +364,30 @@ function Show-PolicySelectionMenu {
 }
 
 # Main execution
+Write-Host ""
 Write-Host "=== Intune Configuration Profile Creation Script ===" -ForegroundColor Cyan
-Write-Host "This script will create configuration profiles from JSON files" -ForegroundColor Cyan
+Write-Host "This script will create all the baseline configuration profiles for Intune" -ForegroundColor Cyan
 Write-Host ""
 
-# Initialize configuration folder
+# Initialize configuration folder and download files from GitHub
 if (-not (Initialize-ConfigFolder)) {
-    Write-Error "Cannot proceed without configuration folder"
+    Write-Error "Cannot proceed without configuration files"
     return
 }
 
-Write-Host "Configuration folder: $ConfigFolderPath" -ForegroundColor Gray
 Write-Host ""
 
 # Load configuration policies from folder
 $availablePolicies = Get-ConfigurationPoliciesFromFolder
 
-# If no policies found, offer to create sample files
+# Check if any policies were loaded
 if ($availablePolicies.Count -eq 0) {
-    Write-Host "No configuration files found. Would you like to create sample configuration files? (Y/N): " -ForegroundColor Yellow -NoNewline
-    $createSamples = Read-Host
-    
-    if ($createSamples -eq 'Y' -or $createSamples -eq 'y') {
-        $samplesCreated = New-SampleConfigurationFiles
-        if ($samplesCreated -gt 0) {
-            Write-Host "`nPlease customize the sample files and run the script again." -ForegroundColor Cyan
-        }
-    }
-    
-    Write-Host "Exiting..." -ForegroundColor Yellow
+    Write-Host "No valid configuration files were found or loaded." -ForegroundColor Yellow
+    Remove-ConfigFolder
     return
 }
 
-Write-Host "Found $($availablePolicies.Count) configuration file(s)" -ForegroundColor Green
+Write-Host "Loaded $($availablePolicies.Count) configuration file(s)" -ForegroundColor Green
 Write-Host ""
 
 # Connect to Microsoft Graph
@@ -430,6 +399,7 @@ if (Connect-ToMSGraph) {
     
     if ($selectedPolicies.Count -eq 0) {
         Write-Host "No policies selected. Exiting..." -ForegroundColor Yellow
+        Remove-ConfigFolder
         return
     }
     
@@ -476,11 +446,14 @@ if (Connect-ToMSGraph) {
     Write-Host "=== Script Execution Completed ===" -ForegroundColor Cyan
     Write-Host "Summary:" -ForegroundColor White
     Write-Host "- Selected policies: $($selectedPolicies.Count)" -ForegroundColor Gray
-    Write-Host "- Configuration folder: $ConfigFolderPath" -ForegroundColor Gray
     Write-Host "- Check the Intune portal to verify policy creation and assignment" -ForegroundColor Gray
+    
+    # Clean up temporary files
+    Remove-ConfigFolder
 }
 else {
     Write-Error "Cannot proceed without Microsoft Graph connection"
+    Remove-ConfigFolder
 }
 
 # Disconnect from Microsoft Graph
