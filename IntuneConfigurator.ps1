@@ -46,7 +46,7 @@ foreach ($module in $Modules) {
     }
 }
 
-# Function to ensure configuration folder exists and download JSON files from GitHub
+# Also update the download function to not double-convert JSON
 function Initialize-ConfigFolder {
     try {
         # Clean up existing folder if it exists
@@ -78,10 +78,19 @@ function Initialize-ConfigFolder {
             foreach ($file in $jsonFiles) {
                 try {
                     $localFilePath = Join-Path $ConfigFolderPath $file.name
+                    
+                    # Download the raw file content directly (don't parse and re-serialize)
                     $fileContent = Invoke-RestMethod -Uri $file.download_url -Method GET -ErrorAction Stop
                     
-                    # Save file content
-                    $fileContent | ConvertTo-Json -Depth 20 | Out-File -FilePath $localFilePath -Encoding UTF8 -ErrorAction Stop
+                    # Save file content as raw JSON (not re-serialized)
+                    if ($fileContent -is [string]) {
+                        # It's already a string, save directly
+                        $fileContent | Out-File -FilePath $localFilePath -Encoding UTF8 -ErrorAction Stop
+                    } else {
+                        # It's been parsed as an object, need to convert back to JSON
+                        $fileContent | ConvertTo-Json -Depth 20 | Out-File -FilePath $localFilePath -Encoding UTF8 -ErrorAction Stop
+                    }
+                    
                     Write-Host "Downloaded: $($file.name)" -ForegroundColor Green
                 }
                 catch {
@@ -116,7 +125,7 @@ function Remove-ConfigFolder {
     }
 }
 
-# Function to load JSON configuration files from folder
+# Fixed function to load JSON configuration files from folder
 function Get-ConfigurationPoliciesFromFolder {
     try {
         $configFiles = Get-ChildItem -Path $ConfigFolderPath -Filter "*.json" -ErrorAction Stop
@@ -130,9 +139,32 @@ function Get-ConfigurationPoliciesFromFolder {
         
         foreach ($file in $configFiles) {
             try {
+                Write-Host "Processing file: $($file.Name)" -ForegroundColor Cyan
+                
                 # Read and parse JSON file
-                $jsonContent = Get-Content -Path $file.FullName -Raw -ErrorAction Stop
+                $jsonContent = Get-Content -Path $file.FullName -Raw -Encoding UTF8 -ErrorAction Stop
+                
+                # Debug: Show first 200 characters of raw JSON
+                Write-Host "Raw JSON preview (first 200 chars):" -ForegroundColor Gray
+                Write-Host $jsonContent.Substring(0, [Math]::Min(200, $jsonContent.Length)) -ForegroundColor DarkGray
+                
                 $policyData = $jsonContent | ConvertFrom-Json -ErrorAction Stop
+                
+                # Debug: Show what we got after parsing
+                Write-Host "Parsed JSON structure:" -ForegroundColor Gray
+                Write-Host "- Description: '$($policyData.description)'" -ForegroundColor DarkGray
+                Write-Host "- Platforms: '$($policyData.platforms)'" -ForegroundColor DarkGray
+                Write-Host "- Technologies: '$($policyData.technologies)'" -ForegroundColor DarkGray
+                Write-Host "- Settings: $($policyData.settings -ne $null)" -ForegroundColor DarkGray
+                if ($policyData.templateReference) {
+                    Write-Host "- Template Reference: $($policyData.templateReference -ne $null)" -ForegroundColor DarkGray
+                }
+                
+                # Validate that we have the minimum required fields
+                if (-not $policyData.platforms -or -not $policyData.technologies -or -not $policyData.settings) {
+                    Write-Warning "File $($file.Name) is missing required fields (platforms, technologies, or settings). Skipping..."
+                    continue
+                }
                 
                 # Extract policy name from filename (remove .json extension)
                 $baseName = [System.IO.Path]::GetFileNameWithoutExtension($file.Name)
@@ -140,22 +172,17 @@ function Get-ConfigurationPoliciesFromFolder {
                 # Determine if this policy requires Entra config (currently only LAPS)
                 $requiresEntraConfig = $baseName -like "*LAPS*"
                 
-                # Create policy object
+                # Create policy object - pass the policyData directly instead of wrapping it
                 $policy = @{
                     Name = "VWC BL - $baseName"
                     Description = "🛡️ Dit is een standaard VWC Baseline policy"
-                    Data = @{
-                        description = $policyData.description
-                        platforms = $policyData.platforms
-                        technologies = $policyData.technologies
-                        templateReference = $policyData.templateReference
-                        settings = $policyData.settings
-                    }
+                    Data = $policyData  # Pass the entire parsed JSON object directly
                     RequiresEntraConfig = $requiresEntraConfig
                     FileName = $file.Name
                 }
                 
                 $policies += $policy
+                Write-Host "✓ Successfully loaded: $($policy.Name)" -ForegroundColor Green
             }
             catch {
                 Write-Warning "Failed to load configuration from $($file.Name): $($_.Exception.Message)"
@@ -186,17 +213,17 @@ function Connect-ToMSGraph {
     }
 }
 
-# Function to create configuration policy from JSON
+# Function to create configuration policy from JSON (ENHANCED VERSION with better error handling)
 function New-ConfigurationPolicyFromJson {
     param(
         [Parameter(Mandatory = $true)]
-        [hashtable]$PolicyData,
+        [PSCustomObject]$PolicyData,
         [Parameter(Mandatory = $true)]
         [string]$PolicyName
     )
     
     try {
-        Write-Host "Creating configuration policy: $PolicyName" -ForegroundColor Yellow
+        Write-Host "Creating configuration policy: $PolicyName..." -ForegroundColor Yellow
         
         # Check if this is an endpoint security policy based on templateReference
         $isEndpointSecurity = $false
@@ -204,7 +231,6 @@ function New-ConfigurationPolicyFromJson {
             $PolicyData.templateReference.templateFamily -ne "none" -and 
             $PolicyData.templateReference.templateId -ne "") {
             $isEndpointSecurity = $true
-            Write-Host "Detected Endpoint Security policy type: $($PolicyData.templateReference.templateFamily)" -ForegroundColor Cyan
         }
         
         # Create the policy body - include templateReference if it exists
@@ -226,20 +252,88 @@ function New-ConfigurationPolicyFromJson {
         
         # Use the same endpoint - Graph API handles different policy types via templateReference
         $uri = "https://graph.microsoft.com/beta/deviceManagement/configurationPolicies"
-        $response = Invoke-MgGraphRequest -Uri $uri -Method POST -Body $jsonBody -ContentType "application/json"
         
-        if ($response.id) {
-            Write-Host "Successfully created policy: $PolicyName (ID: $($response.id))" -ForegroundColor Green
-            return $response
+        try {
+            $response = Invoke-MgGraphRequest -Uri $uri -Method POST -Body $jsonBody -ContentType "application/json" -ErrorAction Stop
+            
+            if ($response.id) {
+                Write-Host "Successfully created policy: $PolicyName (ID: $($response.id))" -ForegroundColor Green
+                
+                # Assign the policy to All Devices and All Users
+                $assignmentSuccess = Set-PolicyAssignments -PolicyId $response.id -PolicyName $PolicyName
+                
+                if (!$assignmentSuccess) {
+                    Write-Warning "Policy '$PolicyName' created but assignment failed"
+                }
+                
+                return $response
+            }
+            else {
+                Write-Error "Failed to create policy: $PolicyName - No ID returned"
+                return $null
+            }
         }
-        else {
-            Write-Error "Failed to create policy: $PolicyName"
-            return $null
+        catch {
+            # Basic error handling
+            Write-Error "Graph API request failed: $($_.Exception.Message)"
+            throw "Graph API request failed: $($_.Exception.Message)"
         }
     }
     catch {
         Write-Error "Error creating policy $PolicyName : $($_.Exception.Message)"
         return $null
+    }
+}
+
+# Function to assign policy to All Devices and All Users
+function Set-PolicyAssignments {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$PolicyId,
+        [Parameter(Mandatory = $true)]
+        [string]$PolicyName
+    )
+    
+    try {
+        Write-Host "Assigning policy '$PolicyName' to All Devices and All Users..." -ForegroundColor Yellow
+        
+        # Define assignment body for All Devices and All Users
+        $assignmentBody = @{
+            assignments = @(
+                @{
+                    id = ""
+                    target = @{
+                        "@odata.type" = "#microsoft.graph.allDevicesAssignmentTarget"
+                    }
+                },
+                @{
+                    id = ""
+                    target = @{
+                        "@odata.type" = "#microsoft.graph.allLicensedUsersAssignmentTarget"
+                    }
+                }
+            )
+        }
+        
+        # Convert to JSON
+        $jsonBody = $assignmentBody | ConvertTo-Json -Depth 10
+        
+        # Assign the policy
+        $uri = "https://graph.microsoft.com/beta/deviceManagement/configurationPolicies('$PolicyId')/assign"
+        
+        try {
+            $response = Invoke-MgGraphRequest -Uri $uri -Method POST -Body $jsonBody -ContentType "application/json" -ErrorAction Stop
+            Write-Host "✓ Successfully assigned policy '$PolicyName' to All Devices and All Users" -ForegroundColor Green
+            return $true
+        }
+        catch {
+            Write-Error "Failed to assign policy '$PolicyName': $($_.Exception.Message)"
+            return $false
+        }
+    }
+    catch {
+        Write-Error "Failed to assign policy '$PolicyName': $($_.Exception.Message)"
+        return $false
     }
 }
 
@@ -433,10 +527,7 @@ if (Connect-ToMSGraph) {
         # Create the policy
         $result = New-ConfigurationPolicyFromJson -PolicyData $policy.Data -PolicyName $policy.Name
         
-        if ($result) {
-            Write-Host "✓ Policy '$($policy.Name)' created successfully!" -ForegroundColor Green
-        }
-        else {
+        if (!$result) {
             Write-Error "✗ Failed to create policy: $($policy.Name)"
         }
         
