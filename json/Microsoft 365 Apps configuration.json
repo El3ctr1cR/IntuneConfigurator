@@ -1,1 +1,276 @@
-﻿{"@odata.context":"https://graph.microsoft.com/beta/$metadata#deviceManagement/configurationPolicies/$entity","createdDateTime":"2025-06-16T20:37:52.0551793Z","creationSource":null,"description":"","lastModifiedDateTime":"2025-06-16T20:37:52.0551793Z","name":"VWC BL - Windows - Microsoft 365 Apps configuration","platforms":"windows10","priorityMetaData":null,"roleScopeTagIds":["0"],"settingCount":16,"technologies":"mdm","id":"2dd23622-659a-40cf-be77-0b070db6ce92","templateReference":{"templateId":"","templateFamily":"none","templateDisplayName":null,"templateDisplayVersion":null},"settings":[{"id":"0","settingInstance":{"@odata.type":"#microsoft.graph.deviceManagementConfigurationChoiceSettingInstance","settingDefinitionId":"user_vendor_msft_policy_config_excel16v2~policy~l_microsoftofficeexcel~l_exceloptions~l_save_l_saveexcelfilesas","settingInstanceTemplateReference":null,"choiceSettingValue":{"settingValueTemplateReference":null,"value":"user_vendor_msft_policy_config_excel16v2~policy~l_microsoftofficeexcel~l_exceloptions~l_save_l_saveexcelfilesas_1","children":[{"@odata.type":"#microsoft.graph.deviceManagementConfigurationChoiceSettingInstance","settingDefinitionId":"user_vendor_msft_policy_config_excel16v2~policy~l_microsoftofficeexcel~l_exceloptions~l_save_l_saveexcelfilesas_l_saveexcelfilesas1","settingInstanceTemplateReference":null,"choiceSettingValue":{"settingValueTemplateReference":null,"value":"user_vendor_msft_policy_config_excel16v2~policy~l_microsoftofficeexcel~l_exceloptions~l_save_l_saveexcelfilesas_l_saveexcelfilesas1_51","children":[]}}]}}},{"id":"1","settingInstance":{"@odata.type":"#microsoft.graph.deviceManagementConfigurationChoiceSettingInstance","settingDefinitionId":"user_vendor_msft_policy_config_office16v2~policy~l_microsoftofficesystem~l_subscriptionactivation_l_autoorgidgetkey","settingInstanceTemplateReference":null,"choiceSettingValue":{"settingValueTemplateReference":null,"value":"user_vendor_msft_policy_config_office16v2~policy~l_microsoftofficesystem~l_subscriptionactivation_l_autoorgidgetkey_1","children":[]}}},{"id":"2","settingInstance":{"@odata.type":"#microsoft.graph.deviceManagementConfigurationChoiceSettingInstance","settingDefinitionId":"user_vendor_msft_policy_config_office16v2~policy~l_microsoftofficesystem~l_firstrun_l_disablemovie","settingInstanceTemplateReference":null,"choiceSettingValue":{"settingValueTemplateReference":null,"value":"user_vendor_msft_policy_config_office16v2~policy~l_microsoftofficesystem~l_firstrun_l_disablemovie_1","children":[]}}},{"id":"3","settingInstance":{"@odata.type":"#microsoft.graph.deviceManagementConfigurationChoiceSettingInstance","settingDefinitionId":"user_vendor_msft_policy_config_office16v2~policy~l_microsoftofficesystem~l_firstrun_l_disableofficefirstrun","settingInstanceTemplateReference":null,"choiceSettingValue":{"settingValueTemplateReference":null,"value":"user_vendor_msft_policy_config_office16v2~policy~l_microsoftofficesystem~l_firstrun_l_disableofficefirstrun_1","children":[]}}},{"id":"4","settingInstance":{"@odata.type":"#microsoft.graph.deviceManagementConfigurationChoiceSettingInstance","settingDefinitionId":"user_vendor_msft_policy_config_office16v2.updates.3~policy~l_microsoftofficesystem~l_privacy~l_trustcenter_l_optionalconnectedexperiences","settingInstanceTemplateReference":null,"choiceSettingValue":{"settingValueTemplateReference":null,"value":"user_vendor_msft_policy_config_office16v2.updates.3~policy~l_microsoftofficesystem~l_privacy~l_trustcenter_l_optionalconnectedexperiences_1","children":[]}}},{"id":"5","settingInstance":{"@odata.type":"#microsoft.graph.deviceManagementConfigurationChoiceSettingInstance","settingDefinitionId":"user_vendor_msft_policy_config_office16v2~policy~l_microsoftofficesystem~l_privacy~l_trustcenter_l_sendtelemetry","settingInstanceTemplateReference":null,"choiceSettingValue":{"settingValueTemplateReference":null,"value":"user_vendor_msft_policy_config_office16v2~policy~l_microsoftofficesystem~l_privacy~l_trustcenter_l_sendtelemetry_1","children":[{"@odata.type":"#microsoft.graph.deviceManagementConfigurationChoiceSettingInstance","settingDefinitionId":"user_vendor_msft_policy_config_office16v2~policy~l_microsoftofficesystem~l_privacy~l_trustcenter_l_sendtelemetry_l_sendtelemetrydropid","settingInstanceTemplateReference":null,"choiceSettingValue":{"settingValueTemplateReference":null,"value":"user_vendor_msft_policy_config_office16v2~policy~l_microsoftofficesystem~l_privacy~l_trustcenter_l_sendtelemetry_l_sendtelemetrydropid_3","children":[]}}]}}},{"id":"6","settingInstance":{"@odata.type":"#microsoft.graph.deviceManagementConfigurationChoiceSettingInstance","settingDefinitionId":"user_vendor_msft_policy_config_office16v2~policy~l_microsoftofficesystem~l_privacy~l_trustcenter_l_disableoptinwizard","settingInstanceTemplateReference":null,"choiceSettingValue":{"settingValueTemplateReference":null,"value":"user_vendor_msft_policy_config_office16v2~policy~l_microsoftofficesystem~l_privacy~l_trustcenter_l_disableoptinwizard_1","children":[]}}},{"id":"7","settingInstance":{"@odata.type":"#microsoft.graph.deviceManagementConfigurationChoiceSettingInstance","settingDefinitionId":"user_vendor_msft_policy_config_office16v2~policy~l_microsoftofficesystem~l_privacy~l_trustcenter_l_sendcustomerdata","settingInstanceTemplateReference":null,"choiceSettingValue":{"settingValueTemplateReference":null,"value":"user_vendor_msft_policy_config_office16v2~policy~l_microsoftofficesystem~l_privacy~l_trustcenter_l_sendcustomerdata_0","children":[]}}},{"id":"8","settingInstance":{"@odata.type":"#microsoft.graph.deviceManagementConfigurationChoiceSettingInstance","settingDefinitionId":"user_vendor_msft_policy_config_office16v2~policy~l_microsoftofficesystem~l_languagesettings~l_other_l_disablecomingsoon","settingInstanceTemplateReference":null,"choiceSettingValue":{"settingValueTemplateReference":null,"value":"user_vendor_msft_policy_config_office16v2~policy~l_microsoftofficesystem~l_languagesettings~l_other_l_disablecomingsoon_1","children":[]}}},{"id":"9","settingInstance":{"@odata.type":"#microsoft.graph.deviceManagementConfigurationChoiceSettingInstance","settingDefinitionId":"user_vendor_msft_policy_config_outlk16v2~policy~l_microsoftofficeoutlook~l_toolsaccounts~l_exchangesettings_l_automaticallyconfigureprofilebasedonactive","settingInstanceTemplateReference":null,"choiceSettingValue":{"settingValueTemplateReference":null,"value":"user_vendor_msft_policy_config_outlk16v2~policy~l_microsoftofficeoutlook~l_toolsaccounts~l_exchangesettings_l_automaticallyconfigureprofilebasedonactive_1","children":[]}}},{"id":"10","settingInstance":{"@odata.type":"#microsoft.graph.deviceManagementConfigurationChoiceSettingInstance","settingDefinitionId":"user_vendor_msft_policy_config_outlk16v2~policy~l_microsoftofficeoutlook~l_toolsaccounts~l_exchangesettings~l_cachedexchangemode_l_downloadshardnonmailfolders","settingInstanceTemplateReference":null,"choiceSettingValue":{"settingValueTemplateReference":null,"value":"user_vendor_msft_policy_config_outlk16v2~policy~l_microsoftofficeoutlook~l_toolsaccounts~l_exchangesettings~l_cachedexchangemode_l_downloadshardnonmailfolders_0","children":[]}}},{"id":"11","settingInstance":{"@odata.type":"#microsoft.graph.deviceManagementConfigurationChoiceSettingInstance","settingDefinitionId":"user_vendor_msft_policy_config_outlk16v2~policy~l_microsoftofficeoutlook~l_outlookoptions~l_other_l_makeoutlookthedefaultprogramforemailcontactsandcalendar","settingInstanceTemplateReference":null,"choiceSettingValue":{"settingValueTemplateReference":null,"value":"user_vendor_msft_policy_config_outlk16v2~policy~l_microsoftofficeoutlook~l_outlookoptions~l_other_l_makeoutlookthedefaultprogramforemailcontactsandcalendar_1","children":[]}}},{"id":"12","settingInstance":{"@odata.type":"#microsoft.graph.deviceManagementConfigurationChoiceSettingInstance","settingDefinitionId":"user_vendor_msft_policy_config_outlk16v2~policy~l_microsoftofficeoutlook~l_outlookoptions~l_delegates_l_cacheothersmail","settingInstanceTemplateReference":null,"choiceSettingValue":{"settingValueTemplateReference":null,"value":"user_vendor_msft_policy_config_outlk16v2~policy~l_microsoftofficeoutlook~l_outlookoptions~l_delegates_l_cacheothersmail_1","children":[]}}},{"id":"13","settingInstance":{"@odata.type":"#microsoft.graph.deviceManagementConfigurationChoiceSettingInstance","settingDefinitionId":"user_vendor_msft_policy_config_outlk16v2~policy~l_microsoftofficeoutlook~l_outlookoptions~l_preferences~l_calendaroptions_l_calendarweeknumbers","settingInstanceTemplateReference":null,"choiceSettingValue":{"settingValueTemplateReference":null,"value":"user_vendor_msft_policy_config_outlk16v2~policy~l_microsoftofficeoutlook~l_outlookoptions~l_preferences~l_calendaroptions_l_calendarweeknumbers_1","children":[]}}},{"id":"14","settingInstance":{"@odata.type":"#microsoft.graph.deviceManagementConfigurationChoiceSettingInstance","settingDefinitionId":"user_vendor_msft_policy_config_ppt16v2~policy~l_microsoftofficepowerpoint~l_powerpointoptions~l_save_l_savepowerpointfilesas","settingInstanceTemplateReference":null,"choiceSettingValue":{"settingValueTemplateReference":null,"value":"user_vendor_msft_policy_config_ppt16v2~policy~l_microsoftofficepowerpoint~l_powerpointoptions~l_save_l_savepowerpointfilesas_1","children":[{"@odata.type":"#microsoft.graph.deviceManagementConfigurationChoiceSettingInstance","settingDefinitionId":"user_vendor_msft_policy_config_ppt16v2~policy~l_microsoftofficepowerpoint~l_powerpointoptions~l_save_l_savepowerpointfilesas_l_savepowerpointfilesas1","settingInstanceTemplateReference":null,"choiceSettingValue":{"settingValueTemplateReference":null,"value":"user_vendor_msft_policy_config_ppt16v2~policy~l_microsoftofficepowerpoint~l_powerpointoptions~l_save_l_savepowerpointfilesas_l_savepowerpointfilesas1_27","children":[]}}]}}},{"id":"15","settingInstance":{"@odata.type":"#microsoft.graph.deviceManagementConfigurationChoiceSettingInstance","settingDefinitionId":"user_vendor_msft_policy_config_word16v2~policy~l_microsoftofficeword~l_wordoptions~l_save_l_savewordfilesas","settingInstanceTemplateReference":null,"choiceSettingValue":{"settingValueTemplateReference":null,"value":"user_vendor_msft_policy_config_word16v2~policy~l_microsoftofficeword~l_wordoptions~l_save_l_savewordfilesas_1","children":[{"@odata.type":"#microsoft.graph.deviceManagementConfigurationChoiceSettingInstance","settingDefinitionId":"user_vendor_msft_policy_config_word16v2~policy~l_microsoftofficeword~l_wordoptions~l_save_l_savewordfilesas_l_savewordfilesas3","settingInstanceTemplateReference":null,"choiceSettingValue":{"settingValueTemplateReference":null,"value":"user_vendor_msft_policy_config_word16v2~policy~l_microsoftofficeword~l_wordoptions~l_save_l_savewordfilesas_l_savewordfilesas3_","children":[]}}]}}}]}
+﻿{
+    "@odata.context": "https://graph.microsoft.com/beta/$metadata#deviceManagement/configurationPolicies/$entity",
+    "createdDateTime": "2025-06-16T20:37:52.0551793Z",
+    "creationSource": null,
+    "description": "",
+    "lastModifiedDateTime": "2025-06-16T20:37:52.0551793Z",
+    "name": "VWC BL - Windows - Microsoft 365 Apps configuration",
+    "platforms": "windows10",
+    "priorityMetaData": null,
+    "roleScopeTagIds": [
+        "0"
+    ],
+    "settingCount": 16,
+    "technologies": "mdm",
+    "id": "2dd23622-659a-40cf-be77-0b070db6ce92",
+    "templateReference": {
+        "templateId": "",
+        "templateFamily": "none",
+        "templateDisplayName": null,
+        "templateDisplayVersion": null
+    },
+    "settings": [
+        {
+            "id": "0",
+            "settingInstance": {
+                "@odata.type": "#microsoft.graph.deviceManagementConfigurationChoiceSettingInstance",
+                "settingDefinitionId": "user_vendor_msft_policy_config_excel16v2~policy~l_microsoftofficeexcel~l_exceloptions~l_save_l_saveexcelfilesas",
+                "settingInstanceTemplateReference": null,
+                "choiceSettingValue": {
+                    "settingValueTemplateReference": null,
+                    "value": "user_vendor_msft_policy_config_excel16v2~policy~l_microsoftofficeexcel~l_exceloptions~l_save_l_saveexcelfilesas_1",
+                    "children": [
+                        {
+                            "@odata.type": "#microsoft.graph.deviceManagementConfigurationChoiceSettingInstance",
+                            "settingDefinitionId": "user_vendor_msft_policy_config_excel16v2~policy~l_microsoftofficeexcel~l_exceloptions~l_save_l_saveexcelfilesas_l_saveexcelfilesas1",
+                            "settingInstanceTemplateReference": null,
+                            "choiceSettingValue": {
+                                "settingValueTemplateReference": null,
+                                "value": "user_vendor_msft_policy_config_excel16v2~policy~l_microsoftofficeexcel~l_exceloptions~l_save_l_saveexcelfilesas_l_saveexcelfilesas1_51",
+                                "children": []
+                            }
+                        }
+                    ]
+                }
+            }
+        },
+        {
+            "id": "1",
+            "settingInstance": {
+                "@odata.type": "#microsoft.graph.deviceManagementConfigurationChoiceSettingInstance",
+                "settingDefinitionId": "user_vendor_msft_policy_config_office16v2~policy~l_microsoftofficesystem~l_subscriptionactivation_l_autoorgidgetkey",
+                "settingInstanceTemplateReference": null,
+                "choiceSettingValue": {
+                    "settingValueTemplateReference": null,
+                    "value": "user_vendor_msft_policy_config_office16v2~policy~l_microsoftofficesystem~l_subscriptionactivation_l_autoorgidgetkey_1",
+                    "children": []
+                }
+            }
+        },
+        {
+            "id": "2",
+            "settingInstance": {
+                "@odata.type": "#microsoft.graph.deviceManagementConfigurationChoiceSettingInstance",
+                "settingDefinitionId": "user_vendor_msft_policy_config_office16v2~policy~l_microsoftofficesystem~l_firstrun_l_disablemovie",
+                "settingInstanceTemplateReference": null,
+                "choiceSettingValue": {
+                    "settingValueTemplateReference": null,
+                    "value": "user_vendor_msft_policy_config_office16v2~policy~l_microsoftofficesystem~l_firstrun_l_disablemovie_1",
+                    "children": []
+                }
+            }
+        },
+        {
+            "id": "3",
+            "settingInstance": {
+                "@odata.type": "#microsoft.graph.deviceManagementConfigurationChoiceSettingInstance",
+                "settingDefinitionId": "user_vendor_msft_policy_config_office16v2~policy~l_microsoftofficesystem~l_firstrun_l_disableofficefirstrun",
+                "settingInstanceTemplateReference": null,
+                "choiceSettingValue": {
+                    "settingValueTemplateReference": null,
+                    "value": "user_vendor_msft_policy_config_office16v2~policy~l_microsoftofficesystem~l_firstrun_l_disableofficefirstrun_1",
+                    "children": []
+                }
+            }
+        },
+        {
+            "id": "4",
+            "settingInstance": {
+                "@odata.type": "#microsoft.graph.deviceManagementConfigurationChoiceSettingInstance",
+                "settingDefinitionId": "user_vendor_msft_policy_config_office16v2.updates.3~policy~l_microsoftofficesystem~l_privacy~l_trustcenter_l_optionalconnectedexperiences",
+                "settingInstanceTemplateReference": null,
+                "choiceSettingValue": {
+                    "settingValueTemplateReference": null,
+                    "value": "user_vendor_msft_policy_config_office16v2.updates.3~policy~l_microsoftofficesystem~l_privacy~l_trustcenter_l_optionalconnectedexperiences_1",
+                    "children": []
+                }
+            }
+        },
+        {
+            "id": "5",
+            "settingInstance": {
+                "@odata.type": "#microsoft.graph.deviceManagementConfigurationChoiceSettingInstance",
+                "settingDefinitionId": "user_vendor_msft_policy_config_office16v2~policy~l_microsoftofficesystem~l_privacy~l_trustcenter_l_sendtelemetry",
+                "settingInstanceTemplateReference": null,
+                "choiceSettingValue": {
+                    "settingValueTemplateReference": null,
+                    "value": "user_vendor_msft_policy_config_office16v2~policy~l_microsoftofficesystem~l_privacy~l_trustcenter_l_sendtelemetry_1",
+                    "children": [
+                        {
+                            "@odata.type": "#microsoft.graph.deviceManagementConfigurationChoiceSettingInstance",
+                            "settingDefinitionId": "user_vendor_msft_policy_config_office16v2~policy~l_microsoftofficesystem~l_privacy~l_trustcenter_l_sendtelemetry_l_sendtelemetrydropid",
+                            "settingInstanceTemplateReference": null,
+                            "choiceSettingValue": {
+                                "settingValueTemplateReference": null,
+                                "value": "user_vendor_msft_policy_config_office16v2~policy~l_microsoftofficesystem~l_privacy~l_trustcenter_l_sendtelemetry_l_sendtelemetrydropid_3",
+                                "children": []
+                            }
+                        }
+                    ]
+                }
+            }
+        },
+        {
+            "id": "6",
+            "settingInstance": {
+                "@odata.type": "#microsoft.graph.deviceManagementConfigurationChoiceSettingInstance",
+                "settingDefinitionId": "user_vendor_msft_policy_config_office16v2~policy~l_microsoftofficesystem~l_privacy~l_trustcenter_l_disableoptinwizard",
+                "settingInstanceTemplateReference": null,
+                "choiceSettingValue": {
+                    "settingValueTemplateReference": null,
+                    "value": "user_vendor_msft_policy_config_office16v2~policy~l_microsoftofficesystem~l_privacy~l_trustcenter_l_disableoptinwizard_1",
+                    "children": []
+                }
+            }
+        },
+        {
+            "id": "7",
+            "settingInstance": {
+                "@odata.type": "#microsoft.graph.deviceManagementConfigurationChoiceSettingInstance",
+                "settingDefinitionId": "user_vendor_msft_policy_config_office16v2~policy~l_microsoftofficesystem~l_privacy~l_trustcenter_l_sendcustomerdata",
+                "settingInstanceTemplateReference": null,
+                "choiceSettingValue": {
+                    "settingValueTemplateReference": null,
+                    "value": "user_vendor_msft_policy_config_office16v2~policy~l_microsoftofficesystem~l_privacy~l_trustcenter_l_sendcustomerdata_0",
+                    "children": []
+                }
+            }
+        },
+        {
+            "id": "8",
+            "settingInstance": {
+                "@odata.type": "#microsoft.graph.deviceManagementConfigurationChoiceSettingInstance",
+                "settingDefinitionId": "user_vendor_msft_policy_config_office16v2~policy~l_microsoftofficesystem~l_languagesettings~l_other_l_disablecomingsoon",
+                "settingInstanceTemplateReference": null,
+                "choiceSettingValue": {
+                    "settingValueTemplateReference": null,
+                    "value": "user_vendor_msft_policy_config_office16v2~policy~l_microsoftofficesystem~l_languagesettings~l_other_l_disablecomingsoon_1",
+                    "children": []
+                }
+            }
+        },
+        {
+            "id": "9",
+            "settingInstance": {
+                "@odata.type": "#microsoft.graph.deviceManagementConfigurationChoiceSettingInstance",
+                "settingDefinitionId": "user_vendor_msft_policy_config_outlk16v2~policy~l_microsoftofficeoutlook~l_toolsaccounts~l_exchangesettings_l_automaticallyconfigureprofilebasedonactive",
+                "settingInstanceTemplateReference": null,
+                "choiceSettingValue": {
+                    "settingValueTemplateReference": null,
+                    "value": "user_vendor_msft_policy_config_outlk16v2~policy~l_microsoftofficeoutlook~l_toolsaccounts~l_exchangesettings_l_automaticallyconfigureprofilebasedonactive_1",
+                    "children": []
+                }
+            }
+        },
+        {
+            "id": "10",
+            "settingInstance": {
+                "@odata.type": "#microsoft.graph.deviceManagementConfigurationChoiceSettingInstance",
+                "settingDefinitionId": "user_vendor_msft_policy_config_outlk16v2~policy~l_microsoftofficeoutlook~l_toolsaccounts~l_exchangesettings~l_cachedexchangemode_l_downloadshardnonmailfolders",
+                "settingInstanceTemplateReference": null,
+                "choiceSettingValue": {
+                    "settingValueTemplateReference": null,
+                    "value": "user_vendor_msft_policy_config_outlk16v2~policy~l_microsoftofficeoutlook~l_toolsaccounts~l_exchangesettings~l_cachedexchangemode_l_downloadshardnonmailfolders_0",
+                    "children": []
+                }
+            }
+        },
+        {
+            "id": "11",
+            "settingInstance": {
+                "@odata.type": "#microsoft.graph.deviceManagementConfigurationChoiceSettingInstance",
+                "settingDefinitionId": "user_vendor_msft_policy_config_outlk16v2~policy~l_microsoftofficeoutlook~l_outlookoptions~l_other_l_makeoutlookthedefaultprogramforemailcontactsandcalendar",
+                "settingInstanceTemplateReference": null,
+                "choiceSettingValue": {
+                    "settingValueTemplateReference": null,
+                    "value": "user_vendor_msft_policy_config_outlk16v2~policy~l_microsoftofficeoutlook~l_outlookoptions~l_other_l_makeoutlookthedefaultprogramforemailcontactsandcalendar_1",
+                    "children": []
+                }
+            }
+        },
+        {
+            "id": "12",
+            "settingInstance": {
+                "@odata.type": "#microsoft.graph.deviceManagementConfigurationChoiceSettingInstance",
+                "settingDefinitionId": "user_vendor_msft_policy_config_outlk16v2~policy~l_microsoftofficeoutlook~l_outlookoptions~l_delegates_l_cacheothersmail",
+                "settingInstanceTemplateReference": null,
+                "choiceSettingValue": {
+                    "settingValueTemplateReference": null,
+                    "value": "user_vendor_msft_policy_config_outlk16v2~policy~l_microsoftofficeoutlook~l_outlookoptions~l_delegates_l_cacheothersmail_1",
+                    "children": []
+                }
+            }
+        },
+        {
+            "id": "13",
+            "settingInstance": {
+                "@odata.type": "#microsoft.graph.deviceManagementConfigurationChoiceSettingInstance",
+                "settingDefinitionId": "user_vendor_msft_policy_config_outlk16v2~policy~l_microsoftofficeoutlook~l_outlookoptions~l_preferences~l_calendaroptions_l_calendarweeknumbers",
+                "settingInstanceTemplateReference": null,
+                "choiceSettingValue": {
+                    "settingValueTemplateReference": null,
+                    "value": "user_vendor_msft_policy_config_outlk16v2~policy~l_microsoftofficeoutlook~l_outlookoptions~l_preferences~l_calendaroptions_l_calendarweeknumbers_1",
+                    "children": []
+                }
+            }
+        },
+        {
+            "id": "14",
+            "settingInstance": {
+                "@odata.type": "#microsoft.graph.deviceManagementConfigurationChoiceSettingInstance",
+                "settingDefinitionId": "user_vendor_msft_policy_config_ppt16v2~policy~l_microsoftofficepowerpoint~l_powerpointoptions~l_save_l_savepowerpointfilesas",
+                "settingInstanceTemplateReference": null,
+                "choiceSettingValue": {
+                    "settingValueTemplateReference": null,
+                    "value": "user_vendor_msft_policy_config_ppt16v2~policy~l_microsoftofficepowerpoint~l_powerpointoptions~l_save_l_savepowerpointfilesas_1",
+                    "children": [
+                        {
+                            "@odata.type": "#microsoft.graph.deviceManagementConfigurationChoiceSettingInstance",
+                            "settingDefinitionId": "user_vendor_msft_policy_config_ppt16v2~policy~l_microsoftofficepowerpoint~l_powerpointoptions~l_save_l_savepowerpointfilesas_l_savepowerpointfilesas1",
+                            "settingInstanceTemplateReference": null,
+                            "choiceSettingValue": {
+                                "settingValueTemplateReference": null,
+                                "value": "user_vendor_msft_policy_config_ppt16v2~policy~l_microsoftofficepowerpoint~l_powerpointoptions~l_save_l_savepowerpointfilesas_l_savepowerpointfilesas1_27",
+                                "children": []
+                            }
+                        }
+                    ]
+                }
+            }
+        },
+        {
+            "id": "15",
+            "settingInstance": {
+                "@odata.type": "#microsoft.graph.deviceManagementConfigurationChoiceSettingInstance",
+                "settingDefinitionId": "user_vendor_msft_policy_config_word16v2~policy~l_microsoftofficeword~l_wordoptions~l_save_l_savewordfilesas",
+                "settingInstanceTemplateReference": null,
+                "choiceSettingValue": {
+                    "settingValueTemplateReference": null,
+                    "value": "user_vendor_msft_policy_config_word16v2~policy~l_microsoftofficeword~l_wordoptions~l_save_l_savewordfilesas_1",
+                    "children": [
+                        {
+                            "@odata.type": "#microsoft.graph.deviceManagementConfigurationChoiceSettingInstance",
+                            "settingDefinitionId": "user_vendor_msft_policy_config_word16v2~policy~l_microsoftofficeword~l_wordoptions~l_save_l_savewordfilesas_l_savewordfilesas3",
+                            "settingInstanceTemplateReference": null,
+                            "choiceSettingValue": {
+                                "settingValueTemplateReference": null,
+                                "value": "user_vendor_msft_policy_config_word16v2~policy~l_microsoftofficeword~l_wordoptions~l_save_l_savewordfilesas_l_savewordfilesas3_",
+                                "children": []
+                            }
+                        }
+                    ]
+                }
+            }
+        }
+    ]
+}

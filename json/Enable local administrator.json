@@ -1,1 +1,37 @@
-﻿{"@odata.context":"https://graph.microsoft.com/beta/$metadata#deviceManagement/configurationPolicies/$entity","createdDateTime":"2025-06-16T20:37:50.3297538Z","creationSource":null,"description":"Enable built-in administrator account","lastModifiedDateTime":"2025-06-16T20:37:50.3297538Z","name":"VWC BL - Windows - Enable local administrator","platforms":"windows10","priorityMetaData":null,"roleScopeTagIds":["0"],"settingCount":1,"technologies":"mdm","id":"26e96e41-4fcd-4925-9af8-6ee85e52b00f","templateReference":{"templateId":"","templateFamily":"none","templateDisplayName":null,"templateDisplayVersion":null},"settings":[{"id":"0","settingInstance":{"@odata.type":"#microsoft.graph.deviceManagementConfigurationChoiceSettingInstance","settingDefinitionId":"device_vendor_msft_policy_config_localpoliciessecurityoptions_accounts_enableadministratoraccountstatus","settingInstanceTemplateReference":null,"choiceSettingValue":{"settingValueTemplateReference":null,"value":"device_vendor_msft_policy_config_localpoliciessecurityoptions_accounts_enableadministratoraccountstatus_1","children":[]}}}]}
+﻿{
+    "@odata.context": "https://graph.microsoft.com/beta/$metadata#deviceManagement/configurationPolicies/$entity",
+    "createdDateTime": "2025-06-16T20:37:50.3297538Z",
+    "creationSource": null,
+    "description": "Enable built-in administrator account",
+    "lastModifiedDateTime": "2025-06-16T20:37:50.3297538Z",
+    "name": "VWC BL - Windows - Enable local administrator",
+    "platforms": "windows10",
+    "priorityMetaData": null,
+    "roleScopeTagIds": [
+        "0"
+    ],
+    "settingCount": 1,
+    "technologies": "mdm",
+    "id": "26e96e41-4fcd-4925-9af8-6ee85e52b00f",
+    "templateReference": {
+        "templateId": "",
+        "templateFamily": "none",
+        "templateDisplayName": null,
+        "templateDisplayVersion": null
+    },
+    "settings": [
+        {
+            "id": "0",
+            "settingInstance": {
+                "@odata.type": "#microsoft.graph.deviceManagementConfigurationChoiceSettingInstance",
+                "settingDefinitionId": "device_vendor_msft_policy_config_localpoliciessecurityoptions_accounts_enableadministratoraccountstatus",
+                "settingInstanceTemplateReference": null,
+                "choiceSettingValue": {
+                    "settingValueTemplateReference": null,
+                    "value": "device_vendor_msft_policy_config_localpoliciessecurityoptions_accounts_enableadministratoraccountstatus_1",
+                    "children": []
+                }
+            }
+        }
+    ]
+}
