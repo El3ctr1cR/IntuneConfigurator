@@ -125,7 +125,7 @@ function Remove-ConfigFolder {
     }
 }
 
-# Fixed function to load JSON configuration files from folder
+# Function to load JSON configuration files from folder
 function Get-ConfigurationPoliciesFromFolder {
     try {
         $configFiles = Get-ChildItem -Path $ConfigFolderPath -Filter "*.json" -ErrorAction Stop
@@ -139,32 +139,9 @@ function Get-ConfigurationPoliciesFromFolder {
         
         foreach ($file in $configFiles) {
             try {
-                Write-Host "Processing file: $($file.Name)" -ForegroundColor Cyan
-                
                 # Read and parse JSON file
-                $jsonContent = Get-Content -Path $file.FullName -Raw -Encoding UTF8 -ErrorAction Stop
-                
-                # Debug: Show first 200 characters of raw JSON
-                Write-Host "Raw JSON preview (first 200 chars):" -ForegroundColor Gray
-                Write-Host $jsonContent.Substring(0, [Math]::Min(200, $jsonContent.Length)) -ForegroundColor DarkGray
-                
+                $jsonContent = Get-Content -Path $file.FullName -Raw -ErrorAction Stop
                 $policyData = $jsonContent | ConvertFrom-Json -ErrorAction Stop
-                
-                # Debug: Show what we got after parsing
-                Write-Host "Parsed JSON structure:" -ForegroundColor Gray
-                Write-Host "- Description: '$($policyData.description)'" -ForegroundColor DarkGray
-                Write-Host "- Platforms: '$($policyData.platforms)'" -ForegroundColor DarkGray
-                Write-Host "- Technologies: '$($policyData.technologies)'" -ForegroundColor DarkGray
-                Write-Host "- Settings: $($policyData.settings -ne $null)" -ForegroundColor DarkGray
-                if ($policyData.templateReference) {
-                    Write-Host "- Template Reference: $($policyData.templateReference -ne $null)" -ForegroundColor DarkGray
-                }
-                
-                # Validate that we have the minimum required fields
-                if (-not $policyData.platforms -or -not $policyData.technologies -or -not $policyData.settings) {
-                    Write-Warning "File $($file.Name) is missing required fields (platforms, technologies, or settings). Skipping..."
-                    continue
-                }
                 
                 # Extract policy name from filename (remove .json extension)
                 $baseName = [System.IO.Path]::GetFileNameWithoutExtension($file.Name)
@@ -172,17 +149,22 @@ function Get-ConfigurationPoliciesFromFolder {
                 # Determine if this policy requires Entra config (currently only LAPS)
                 $requiresEntraConfig = $baseName -like "*LAPS*"
                 
-                # Create policy object - pass the policyData directly instead of wrapping it
+                # Create policy object
                 $policy = @{
                     Name = "VWC BL - $baseName"
                     Description = "🛡️ Dit is een standaard VWC Baseline policy"
-                    Data = $policyData  # Pass the entire parsed JSON object directly
+                    Data = @{
+                        description = $policyData.description
+                        platforms = $policyData.platforms
+                        technologies = $policyData.technologies
+                        templateReference = $policyData.templateReference
+                        settings = $policyData.settings
+                    }
                     RequiresEntraConfig = $requiresEntraConfig
                     FileName = $file.Name
                 }
                 
                 $policies += $policy
-                Write-Host "✓ Successfully loaded: $($policy.Name)" -ForegroundColor Green
             }
             catch {
                 Write-Warning "Failed to load configuration from $($file.Name): $($_.Exception.Message)"
