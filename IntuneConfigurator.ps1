@@ -141,6 +141,7 @@ function Get-ConfigurationPoliciesFromFolder {
             try {
                 # Read and parse JSON file
                 $jsonContent = Get-Content -Path $file.FullName -Raw -ErrorAction Stop
+                $jsonContent = $jsonContent.TrimEnd('.')  # Remove any trailing periods
                 $policyData = $jsonContent | ConvertFrom-Json -ErrorAction Stop
                 
                 # Extract policy name from filename (remove .json extension)
