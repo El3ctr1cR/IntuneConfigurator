@@ -1,11 +1,11 @@
 ﻿$Modules = @(
-    @{Name = "Microsoft.Graph.Authentication"; MinVersion = "1.0.0"},
-    @{Name = "Microsoft.Graph.DeviceManagement"; MinVersion = "1.0.0"},
-    @{Name = "Microsoft.Graph.Identity.SignIns"; MinVersion = "1.0.0"},
-    @{Name = "Microsoft.Graph.Groups"; MinVersion = "1.0.0"},
-    @{Name = "Microsoft.Graph.Beta.Identity.SignIns"; MinVersion = "1.0.0"},
-    @{Name = "Microsoft.Graph.Users"; MinVersion = "1.0.0"},
-    @{Name = "Microsoft.Graph.Beta.DeviceManagement"; MinVersion = "1.0.0"}
+    @{Name = "Microsoft.Graph.Authentication"; MinVersion = "1.0.0" },
+    @{Name = "Microsoft.Graph.DeviceManagement"; MinVersion = "1.0.0" },
+    @{Name = "Microsoft.Graph.Identity.SignIns"; MinVersion = "1.0.0" },
+    @{Name = "Microsoft.Graph.Groups"; MinVersion = "1.0.0" },
+    @{Name = "Microsoft.Graph.Beta.Identity.SignIns"; MinVersion = "1.0.0" },
+    @{Name = "Microsoft.Graph.Users"; MinVersion = "1.0.0" },
+    @{Name = "Microsoft.Graph.Beta.DeviceManagement"; MinVersion = "1.0.0" }
 )
 $GraphScopes = @(
     "DeviceManagementConfiguration.ReadWrite.All",
@@ -86,7 +86,8 @@ function Initialize-ConfigFolder {
                     if ($fileContent -is [string]) {
                         # It's already a string, save directly
                         $fileContent | Out-File -FilePath $localFilePath -Encoding UTF8 -ErrorAction Stop
-                    } else {
+                    }
+                    else {
                         # It's been parsed as an object, need to convert back to JSON
                         $fileContent | ConvertTo-Json -Depth 20 | Out-File -FilePath $localFilePath -Encoding UTF8 -ErrorAction Stop
                     }
@@ -141,7 +142,7 @@ function Get-ConfigurationPoliciesFromFolder {
             try {
                 # Read and parse JSON file
                 $jsonContent = Get-Content -Path $file.FullName -Raw -ErrorAction Stop
-                $jsonContent = $jsonContent.TrimEnd('.')  # Remove any trailing periods
+                $jsonContent = $jsonContent -replace '^\uFEFF', ''
                 $policyData = $jsonContent | ConvertFrom-Json -ErrorAction Stop
                 
                 # Extract policy name from filename (remove .json extension)
@@ -152,17 +153,17 @@ function Get-ConfigurationPoliciesFromFolder {
                 
                 # Create policy object
                 $policy = @{
-                    Name = "VWC BL - $baseName"
-                    Description = "🛡️ Dit is een standaard VWC Baseline policy"
-                    Data = @{
-                        description = $policyData.description
-                        platforms = $policyData.platforms
-                        technologies = $policyData.technologies
+                    Name                = "VWC BL - $baseName"
+                    Description         = "🛡️ Dit is een standaard VWC Baseline policy"
+                    Data                = @{
+                        description       = $policyData.description
+                        platforms         = $policyData.platforms
+                        technologies      = $policyData.technologies
                         templateReference = $policyData.templateReference
-                        settings = $policyData.settings
+                        settings          = $policyData.settings
                     }
                     RequiresEntraConfig = $requiresEntraConfig
-                    FileName = $file.Name
+                    FileName            = $file.Name
                 }
                 
                 $policies += $policy
@@ -204,7 +205,8 @@ function Get-TenantId {
         if ($tenantId) {
             Write-Host "Retrieved Tenant ID: $tenantId" -ForegroundColor Green
             return $tenantId
-        } else {
+        }
+        else {
             Write-Error "Failed to retrieve Tenant ID: No organization data returned"
             return $null
         }
@@ -260,11 +262,11 @@ function New-ConfigurationPolicyFromJson {
         
         # Create the policy body
         $policyBody = @{
-            name = $PolicyName
-            description = $PolicyData.description
-            platforms = $PolicyData.platforms
+            name         = $PolicyName
+            description  = $PolicyData.description
+            platforms    = $PolicyData.platforms
             technologies = $PolicyData.technologies
-            settings = $policyBody.settings
+            settings     = $policyBody.settings
         }
         
         # Add templateReference if this is an endpoint security policy
@@ -325,13 +327,13 @@ function Set-PolicyAssignments {
         $assignmentBody = @{
             assignments = @(
                 @{
-                    id = ""
+                    id     = ""
                     target = @{
                         "@odata.type" = "#microsoft.graph.allDevicesAssignmentTarget"
                     }
                 },
                 @{
-                    id = ""
+                    id     = ""
                     target = @{
                         "@odata.type" = "#microsoft.graph.allLicensedUsersAssignmentTarget"
                     }
