@@ -1,10 +1,10 @@
 ﻿{
     "@odata.context": "https://graph.microsoft.com/beta/$metadata#deviceManagement/configurationPolicies/$entity",
-    "createdDateTime": "2025-06-16T20:37:50.0076656Z",
+    "createdDateTime": "",
     "creationSource": null,
-    "description": "Local admin password solution (Windows LAPS) - Endpoint Security version",
-    "lastModifiedDateTime": "2025-06-16T20:37:50.0076656Z",
-    "name": "VWC BL - Windows - LAPS Configuration",
+    "description": "🛡️ Dit is een standaard VWC Baseline policy",
+    "lastModifiedDateTime": "",
+    "name": "",
     "platforms": "windows10",
     "priorityMetaData": null,
     "roleScopeTagIds": [

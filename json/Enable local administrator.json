@@ -1,10 +1,10 @@
 ﻿{
     "@odata.context": "https://graph.microsoft.com/beta/$metadata#deviceManagement/configurationPolicies/$entity",
-    "createdDateTime": "2025-06-16T20:37:50.3297538Z",
+    "createdDateTime": "",
     "creationSource": null,
-    "description": "Enable built-in administrator account",
-    "lastModifiedDateTime": "2025-06-16T20:37:50.3297538Z",
-    "name": "VWC BL - Windows - Enable local administrator",
+    "description": "🛡️ Dit is een standaard VWC Baseline policy",
+    "lastModifiedDateTime": "",
+    "name": "",
     "platforms": "windows10",
     "priorityMetaData": null,
     "roleScopeTagIds": [

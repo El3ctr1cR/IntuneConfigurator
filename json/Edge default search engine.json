@@ -1,10 +1,10 @@
 ﻿{
     "@odata.context": "https://graph.microsoft.com/beta/$metadata#deviceManagement/configurationPolicies/$entity",
-    "createdDateTime": "2025-06-16T20:37:48.7219217Z",
+    "createdDateTime": "",
     "creationSource": null,
-    "description": "",
-    "lastModifiedDateTime": "2025-06-16T20:37:48.7219217Z",
-    "name": "VWC BL - Windows - Edge default search engine",
+    "description": "🛡️ Dit is een standaard VWC Baseline policy",
+    "lastModifiedDateTime": "",
+    "name": "",
     "platforms": "windows10",
     "priorityMetaData": null,
     "roleScopeTagIds": [

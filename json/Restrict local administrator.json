@@ -1,10 +1,10 @@
 ﻿{
     "@odata.context": "https://graph.microsoft.com/beta/$metadata#deviceManagement/configurationPolicies/$entity",
-    "createdDateTime": "2025-06-16T20:37:49.0094794Z",
+    "createdDateTime": "",
     "creationSource": null,
-    "description": "Remove specific users from the local Administrator group",
-    "lastModifiedDateTime": "2025-06-16T20:37:49.0094794Z",
-    "name": "VWC BL - Windows - Restrict local administrator",
+    "description": "🛡️ Dit is een standaard VWC Baseline policy",
+    "lastModifiedDateTime": "",
+    "name": "",
     "platforms": "windows10",
     "priorityMetaData": null,
     "roleScopeTagIds": [

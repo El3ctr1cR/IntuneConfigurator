@@ -1,10 +1,10 @@
 ﻿{
     "@odata.context": "https://graph.microsoft.com/beta/$metadata#deviceManagement/configurationPolicies/$entity",
-    "createdDateTime": "2025-06-16T20:37:48.1331075Z",
+    "createdDateTime": "",
     "creationSource": null,
-    "description": "",
-    "lastModifiedDateTime": "2025-06-16T20:37:48.1331075Z",
-    "name": "VWC BL - Windows - Edge force sign-in",
+    "description": "🛡️ Dit is een standaard VWC Baseline policy",
+    "lastModifiedDateTime": "",
+    "name": "",
     "platforms": "windows10",
     "priorityMetaData": null,
     "roleScopeTagIds": [
