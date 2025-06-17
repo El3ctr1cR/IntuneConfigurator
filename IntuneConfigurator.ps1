@@ -1,4 +1,4 @@
-$Modules = @(
+﻿$Modules = @(
     @{Name = "Microsoft.Graph.Authentication"; MinVersion = "1.0.0"},
     @{Name = "Microsoft.Graph.DeviceManagement"; MinVersion = "1.0.0"},
     @{Name = "Microsoft.Graph.Identity.SignIns"; MinVersion = "1.0.0"},
@@ -116,7 +116,7 @@ function Initialize-ConfigFolder {
 function Remove-ConfigFolder {
     try {
         if (Test-Path $ConfigFolderPath) {
-            Remove-Item -Path $ConfigFolderPath -Recurse -Force -ErrorAction Stop
+            #Remove-Item -Path $ConfigFolderPath -Recurse -Force -ErrorAction Stop
             Write-Host "Cleaned up temporary files" -ForegroundColor Gray
         }
     }

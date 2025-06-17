@@ -1,10 +1,10 @@
 ﻿{
     "@odata.context": "https://graph.microsoft.com/beta/$metadata#deviceManagement/configurationPolicies/$entity",
-    "createdDateTime": "",
+    "createdDateTime": "2025-06-16T20:37:52.7221742Z",
     "creationSource": null,
-    "description": "🛡️ Dit is een standaard VWC Baseline policy",
-    "lastModifiedDateTime": "",
-    "name": "",
+    "description": "",
+    "lastModifiedDateTime": "2025-06-16T20:37:52.7221742Z",
+    "name": "VWC BL - Windows - Antivirus configuration",
     "platforms": "windows10",
     "priorityMetaData": null,
     "roleScopeTagIds": [
