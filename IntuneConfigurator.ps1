@@ -19,8 +19,7 @@ $GraphScopes = @(
 )
 
 # Configuration folder path
-$ConfigFolderPath = Join-Path $env:TEMP "IntuneConfigurator"
-$GitHubJsonUrl = "https://api.github.com/repos/El3ctr1cR/IntuneConfigurator/contents/json"
+$ConfigFolderPath = Join-Path $PSScriptRoot "json"
 
 # Install required modules if not already installed
 foreach ($module in $Modules) {
@@ -46,83 +45,27 @@ foreach ($module in $Modules) {
     }
 }
 
-# Also update the download function to not double-convert JSON
 function Initialize-ConfigFolder {
     try {
-        # Clean up existing folder if it exists
-        if (Test-Path $ConfigFolderPath) {
-            Remove-Item -Path $ConfigFolderPath -Recurse -Force -ErrorAction SilentlyContinue
-        }
-        
-        # Create fresh configuration folder
-        New-Item -ItemType Directory -Path $ConfigFolderPath -Force | Out-Null
-        
-        # Download JSON files from GitHub
-        Write-Host "Downloading baseline configuration files from El3ctr1cR's GitHub..." -ForegroundColor Yellow
-        
-        try {
-            # Get list of files from GitHub API
-            $response = Invoke-RestMethod -Uri $GitHubJsonUrl -Method GET -ErrorAction Stop
-            
-            # Filter for JSON files only
-            $jsonFiles = $response | Where-Object { $_.name -like "*.json" -and $_.type -eq "file" }
-            
-            if ($jsonFiles.Count -eq 0) {
-                Write-Error "No JSON files found in the GitHub repository"
-                return $false
-            }
-            
-            Write-Host "Found $($jsonFiles.Count) configuration file(s) to download" -ForegroundColor Cyan
-            
-            # Download each JSON file
-            foreach ($file in $jsonFiles) {
-                try {
-                    $localFilePath = Join-Path $ConfigFolderPath $file.name
-                    
-                    # Download the raw file content directly (don't parse and re-serialize)
-                    $fileContent = Invoke-RestMethod -Uri $file.download_url -Method GET -ErrorAction Stop
-                    
-                    # Save file content as raw JSON (not re-serialized)
-                    if ($fileContent -is [string]) {
-                        # It's already a string, save directly
-                        $fileContent | Out-File -FilePath $localFilePath -Encoding UTF8 -ErrorAction Stop
-                    }
-                    else {
-                        # It's been parsed as an object, need to convert back to JSON
-                        $fileContent | ConvertTo-Json -Depth 20 | Out-File -FilePath $localFilePath -Encoding UTF8 -ErrorAction Stop
-                    }
-                    
-                    Write-Host "Downloaded: $($file.name)" -ForegroundColor Green
-                }
-                catch {
-                    Write-Warning "Failed to download $($file.name): $($_.Exception.Message)"
-                    continue
-                }
-            }
-            
-            return $true
-        }
-        catch {
-            Write-Error "Failed to access GitHub repository: $($_.Exception.Message)"
+        # Check if the json folder exists
+        if (-not (Test-Path $ConfigFolderPath)) {
+            Write-Error "The 'json' folder does not exist in the script directory: $ConfigFolderPath"
             return $false
         }
+        
+        # Check if there are any JSON files in the folder
+        $jsonFiles = Get-ChildItem -Path $ConfigFolderPath -Filter "*.json" -ErrorAction Stop
+        if ($jsonFiles.Count -eq 0) {
+            Write-Error "No JSON files found in the 'json' folder: $ConfigFolderPath"
+            return $false
+        }
+        
+        Write-Host "Found $($jsonFiles.Count) JSON file(s) in the 'json' folder" -ForegroundColor Green
+        return $true
     }
     catch {
         Write-Error "Failed to initialize configuration folder: $($_.Exception.Message)"
         return $false
-    }
-}
-
-# Function to clean up temporary files
-function Remove-ConfigFolder {
-    try {
-        if (Test-Path $ConfigFolderPath) {
-            #Remove-Item -Path $ConfigFolderPath -Recurse -Force -ErrorAction Stop
-            Write-Host "Cleaned up temporary files" -ForegroundColor Gray
-        }
-    }
-    catch {
-        Write-Warning "Could not clean up temporary folder: $($_.Exception.Message)"
     }
 }
 
@@ -503,7 +446,6 @@ $availablePolicies = Get-ConfigurationPoliciesFromFolder
 # Check if any policies were loaded
 if ($availablePolicies.Count -eq 0) {
     Write-Host "No valid configuration files were found or loaded." -ForegroundColor Yellow
-    Remove-ConfigFolder
     return
 }
 
@@ -519,7 +461,6 @@ if (Connect-ToMSGraph) {
     
     if ($selectedPolicies.Count -eq 0) {
         Write-Host "No policies selected. Exiting..." -ForegroundColor Yellow
-        Remove-ConfigFolder
         return
     }
     
@@ -564,13 +505,9 @@ if (Connect-ToMSGraph) {
     Write-Host "Summary:" -ForegroundColor White
     Write-Host "- Selected policies: $($selectedPolicies.Count)" -ForegroundColor Gray
     Write-Host "- Check the Intune portal to verify policy creation and assignment" -ForegroundColor Gray
-    
-    # Clean up temporary files
-    Remove-ConfigFolder
 }
 else {
     Write-Error "Cannot proceed without Microsoft Graph connection"
-    Remove-ConfigFolder
 }
 
 # Disconnect from Microsoft Graph
