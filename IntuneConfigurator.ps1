@@ -18,10 +18,8 @@ $GraphScopes = @(
     "Directory.ReadWrite.All"
 )
 
-# Configuration folder path
 $ConfigFolderPath = Join-Path $PSScriptRoot "json"
 
-# Install required modules if not already installed
 foreach ($module in $Modules) {
     if (!(Get-Module -ListAvailable -Name $module.Name | Where-Object { [version]$_.Version -ge [version]$module.MinVersion })) {
         try {
@@ -34,7 +32,6 @@ foreach ($module in $Modules) {
     }
 }
 
-# Import required modules
 foreach ($module in $Modules) {
     try {
         Import-Module -Name $module.Name -MinimumVersion $module.MinVersion -ErrorAction Stop
@@ -47,13 +44,11 @@ foreach ($module in $Modules) {
 
 function Initialize-ConfigFolder {
     try {
-        # Check if the json folder exists
         if (-not (Test-Path $ConfigFolderPath)) {
             Write-Error "The 'json' folder does not exist in the script directory: $ConfigFolderPath"
             return $false
         }
         
-        # Check if there are any JSON files in the folder
         $jsonFiles = Get-ChildItem -Path $ConfigFolderPath -Filter "*.json" -ErrorAction Stop
         if ($jsonFiles.Count -eq 0) {
             Write-Error "No JSON files found in the 'json' folder: $ConfigFolderPath"
@@ -69,7 +64,6 @@ function Initialize-ConfigFolder {
     }
 }
 
-# Function to load JSON configuration files from folder
 function Get-ConfigurationPoliciesFromFolder {
     try {
         $configFiles = Get-ChildItem -Path $ConfigFolderPath -Filter "*.json" -ErrorAction Stop
@@ -83,18 +77,14 @@ function Get-ConfigurationPoliciesFromFolder {
         
         foreach ($file in $configFiles) {
             try {
-                # Read and parse JSON file
                 $jsonContent = Get-Content -Path $file.FullName -Raw -ErrorAction Stop
                 $jsonContent = $jsonContent -replace '^\uFEFF', ''
                 $policyData = $jsonContent | ConvertFrom-Json -ErrorAction Stop
                 
-                # Extract policy name from filename (remove .json extension)
                 $baseName = [System.IO.Path]::GetFileNameWithoutExtension($file.Name)
                 
-                # Determine if this policy requires Entra config (currently only LAPS)
                 $requiresEntraConfig = $baseName -like "*LAPS*"
                 
-                # Create policy object
                 $policy = @{
                     Name                = "VWC BL - $baseName"
                     Description         = "🛡️ Dit is een standaard VWC Baseline policy"
@@ -125,10 +115,8 @@ function Get-ConfigurationPoliciesFromFolder {
     }
 }
 
-# Function to connect to Microsoft Graph
 function Connect-ToMSGraph {
     try {
-        # Connect with required scopes
         Write-Host "Connecting to Microsoft Graph..." -ForegroundColor Yellow
         Connect-MgGraph -Scopes $GraphScopes -ErrorAction Stop
         Write-Host "Successfully connected to Microsoft Graph" -ForegroundColor Green
@@ -160,7 +148,6 @@ function Get-TenantId {
     }
 }
 
-# Function to create configuration policy from JSON (ENHANCED VERSION with better error handling)
 function New-ConfigurationPolicyFromJson {
     param(
         [Parameter(Mandatory = $true)]
@@ -172,7 +159,6 @@ function New-ConfigurationPolicyFromJson {
     try {
         Write-Host "Creating configuration policy: $PolicyName..." -ForegroundColor Yellow
         
-        # Check if this is an endpoint security policy based on templateReference
         $isEndpointSecurity = $false
         if ($PolicyData.templateReference -and 
             $PolicyData.templateReference.templateFamily -ne "none" -and 
@@ -180,10 +166,8 @@ function New-ConfigurationPolicyFromJson {
             $isEndpointSecurity = $true
         }
         
-        # Create a deep copy of PolicyData to avoid modifying the original
         $policyBody = $PolicyData | ConvertTo-Json -Depth 20 | ConvertFrom-Json
         
-        # Handle OneDrive silently move Windows known folders policy
         if ($PolicyName -like "*OneDrive silently move Windows known folders*") {
             Write-Host "Detected OneDrive policy - retrieving Tenant ID..." -ForegroundColor Yellow
             $tenantId = Get-TenantId
@@ -192,7 +176,6 @@ function New-ConfigurationPolicyFromJson {
                 return $null
             }
             
-            # Find and update the tenant ID setting
             foreach ($setting in $policyBody.settings) {
                 if ($setting.'@odata.type' -eq "#microsoft.graph.deviceManagementConfigurationSimpleSettingInstance" -and 
                     $setting.settingDefinitionId -eq "device_vendor_msft_policy_config_onedrivengscv2.updates~policy~onedrivengsc_kfmoptinnowizard_kfmoptinnowizard_textbox") {
@@ -203,7 +186,6 @@ function New-ConfigurationPolicyFromJson {
             }
         }
         
-        # Create the policy body
         $policyBody = @{
             name         = $PolicyName
             description  = $PolicyData.description
@@ -212,15 +194,12 @@ function New-ConfigurationPolicyFromJson {
             settings     = $policyBody.settings
         }
         
-        # Add templateReference if this is an endpoint security policy
         if ($isEndpointSecurity) {
             $policyBody.templateReference = $PolicyData.templateReference
         }
         
-        # Convert to JSON for the API call
         $jsonBody = $policyBody | ConvertTo-Json -Depth 20
         
-        # Use the same endpoint - Graph API handles different policy types via templateReference
         $uri = "https://graph.microsoft.com/beta/deviceManagement/configurationPolicies"
         
         try {
@@ -229,7 +208,6 @@ function New-ConfigurationPolicyFromJson {
             if ($response.id) {
                 Write-Host "Successfully created policy: $PolicyName (ID: $($response.id))" -ForegroundColor Green
                 
-                # Assign the policy to All Devices and All Users
                 $assignmentSuccess = Set-PolicyAssignments -PolicyId $response.id -PolicyName $PolicyName
                 
                 if (!$assignmentSuccess) {
@@ -254,7 +232,6 @@ function New-ConfigurationPolicyFromJson {
     }
 }
 
-# Function to assign policy to All Devices and All Users
 function Set-PolicyAssignments {
     param(
         [Parameter(Mandatory = $true)]
@@ -266,7 +243,6 @@ function Set-PolicyAssignments {
     try {
         Write-Host "Assigning policy '$PolicyName' to All Devices and All Users..." -ForegroundColor Yellow
         
-        # Define assignment body for All Devices and All Users
         $assignmentBody = @{
             assignments = @(
                 @{
@@ -284,10 +260,8 @@ function Set-PolicyAssignments {
             )
         }
         
-        # Convert to JSON
         $jsonBody = $assignmentBody | ConvertTo-Json -Depth 10
         
-        # Assign the policy
         $uri = "https://graph.microsoft.com/beta/deviceManagement/configurationPolicies('$PolicyId')/assign"
         
         try {
@@ -306,7 +280,6 @@ function Set-PolicyAssignments {
     }
 }
 
-# Function to check if policy already exists
 function Test-PolicyExists {
     param(
         [Parameter(Mandatory = $true)]
@@ -325,15 +298,12 @@ function Test-PolicyExists {
     }
 }
 
-# Function to enable LAPS in Entra ID
 function Enable-LAPSInEntraID {
     try {
         Write-Host "Enabling LAPS in Entra ID..." -ForegroundColor Yellow
         
-        # Define the URI for device registration policy
         $uri = "https://graph.microsoft.com/beta/policies/deviceRegistrationPolicy"
         
-        # Attempt to get current device registration policy
         try {
             $currentPolicy = Invoke-MgGraphRequest -Method GET -Uri $uri -ErrorAction Stop
             Write-Host "Retrieved device registration policy" -ForegroundColor Cyan
@@ -343,19 +313,15 @@ function Enable-LAPSInEntraID {
             throw "Failed to retrieve device registration policy: $($_.Exception.Message)"
         }
         
-        # Check if LAPS is already enabled
         if ($currentPolicy.localAdminPassword.isEnabled -eq $true) {
             Write-Host "✓ LAPS is already enabled in Entra ID" -ForegroundColor Green
             return
         }
         
-        # Modify the existing policy to enable LAPS
         $currentPolicy.localAdminPassword.isEnabled = $true
         
-        # Convert the updated policy to JSON
         $updateJson = $currentPolicy | ConvertTo-Json -Depth 10
         
-        # Update the policy using PUT
         Invoke-MgGraphRequest -Method PUT -Uri $uri -Body $updateJson -ContentType "application/json" -ErrorAction Stop
         
         Write-Host "✓ LAPS enabled in Entra ID successfully" -ForegroundColor Green
@@ -367,72 +333,55 @@ function Enable-LAPSInEntraID {
     }
 }
 
-# Function to display menu and get user selections
 function Show-PolicySelectionMenu {
     param(
         [Parameter(Mandatory = $true)]
         [array]$AvailablePolicies
     )
     
-    Write-Host "=== Available Configuration Policies ===" -ForegroundColor Cyan
-    Write-Host ""
-    
-    for ($i = 0; $i -lt $AvailablePolicies.Count; $i++) {
-        $policy = $AvailablePolicies[$i]
-        Write-Host "[$($i + 1)] $($policy.Name)" -ForegroundColor White
-        Write-Host "    Description: $($policy.Description)" -ForegroundColor Gray
-        Write-Host "    Source: $($policy.FileName)" -ForegroundColor DarkGray
-        Write-Host ""
-    }
-    
-    Write-Host "[A] Select All" -ForegroundColor Green
-    Write-Host "[N] Select None" -ForegroundColor Red
+    Write-Host "=== Configuration Policy Selection ===" -ForegroundColor Cyan
+    Write-Host "Go through each policy and select Y (Yes) or N (No)" -ForegroundColor Yellow
     Write-Host ""
     
     $selectedPolicies = @()
     
-    while ($true) {
-        Write-Host "Enter your selection (number, A for all, N for none, or Q to finish): " -ForegroundColor Yellow -NoNewline
-        $selection = Read-Host
+    for ($i = 0; $i -lt $AvailablePolicies.Count; $i++) {
+        $policy = $AvailablePolicies[$i]
+        Write-Host "Policy: $($policy.Name)" -ForegroundColor White
+        Write-Host "Description: $($policy.Description)" -ForegroundColor Gray
+        Write-Host "Source: $($policy.FileName)" -ForegroundColor DarkGray
         
-        if ($selection -eq 'Q' -or $selection -eq 'q') {
-            break
-        }
-        elseif ($selection -eq 'A' -or $selection -eq 'a') {
-            $selectedPolicies = $AvailablePolicies
-            Write-Host "All policies selected" -ForegroundColor Green
-            break
-        }
-        elseif ($selection -eq 'N' -or $selection -eq 'n') {
-            $selectedPolicies = @()
-            Write-Host "No policies selected" -ForegroundColor Red
-            break
-        }
-        elseif ($selection -match '^\d+$' -and [int]$selection -ge 1 -and [int]$selection -le $AvailablePolicies.Count) {
-            $selectedPolicy = $AvailablePolicies[[int]$selection - 1]
-            if ($selectedPolicies -notcontains $selectedPolicy) {
-                $selectedPolicies += $selectedPolicy
-                Write-Host "Added: $($selectedPolicy.Name)" -ForegroundColor Green
+        do {
+            Write-Host "Select this policy? (Y/N): " -ForegroundColor Yellow -NoNewline
+            $selection = Read-Host
+            $selection = $selection.Trim().ToUpper()
+            
+            if ($selection -eq 'Y') {
+                $selectedPolicies += $policy
+                Write-Host "✓ Added: $($policy.Name)" -ForegroundColor Green
+                $validSelection = $true
+            }
+            elseif ($selection -eq 'N') {
+                Write-Host "✗ Skipped: $($policy.Name)" -ForegroundColor Red
+                $validSelection = $true
             }
             else {
-                Write-Host "Already selected: $($selectedPolicy.Name)" -ForegroundColor Yellow
+                Write-Host "Invalid selection. Please enter Y or N." -ForegroundColor Red
+                $validSelection = $false
             }
-        }
-        else {
-            Write-Host "Invalid selection. Please try again." -ForegroundColor Red
-        }
+        } while (-not $validSelection)
+        
+        Write-Host ""
     }
     
     return $selectedPolicies
 }
 
-# Main execution
 Write-Host ""
 Write-Host "=== Intune Configuration Profile Creation Script ===" -ForegroundColor Cyan
 Write-Host "This script will create all the baseline configuration profiles for Intune" -ForegroundColor Cyan
 Write-Host ""
 
-# Initialize configuration folder and download files from GitHub
 if (-not (Initialize-ConfigFolder)) {
     Write-Error "Cannot proceed without configuration files"
     return
@@ -440,10 +389,8 @@ if (-not (Initialize-ConfigFolder)) {
 
 Write-Host ""
 
-# Load configuration policies from folder
 $availablePolicies = Get-ConfigurationPoliciesFromFolder
 
-# Check if any policies were loaded
 if ($availablePolicies.Count -eq 0) {
     Write-Host "No valid configuration files were found or loaded." -ForegroundColor Yellow
     return
@@ -452,15 +399,15 @@ if ($availablePolicies.Count -eq 0) {
 Write-Host "Loaded $($availablePolicies.Count) configuration file(s)" -ForegroundColor Green
 Write-Host ""
 
-# Connect to Microsoft Graph
 if (Connect-ToMSGraph) {
-    Write-Host ""
+    Clear-Host
     
-    # Show menu and get user selections
     $selectedPolicies = Show-PolicySelectionMenu -AvailablePolicies $availablePolicies
     
     if ($selectedPolicies.Count -eq 0) {
         Write-Host "No policies selected. Exiting..." -ForegroundColor Yellow
+        Write-Host "Press any key to close..." -ForegroundColor Yellow
+        $null = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")
         return
     }
     
@@ -475,23 +422,19 @@ if (Connect-ToMSGraph) {
     $null = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")
     Write-Host ""
     
-    # Process each selected policy
     foreach ($policy in $selectedPolicies) {
         Write-Host "Processing policy: $($policy.Name)" -ForegroundColor Yellow
         
-        # Check if policy already exists
         if (Test-PolicyExists -PolicyName $policy.Name) {
             Write-Warning "Policy '$($policy.Name)' already exists. Skipping creation."
             continue
         }
         
-        # Handle special requirements (like LAPS Entra ID enablement)
         if ($policy.RequiresEntraConfig -and $policy.Name -like "*LAPS*") {
             Write-Host "LAPS policy selected - enabling LAPS in Entra ID first..." -ForegroundColor Yellow
             Enable-LAPSInEntraID
         }
         
-        # Create the policy
         $result = New-ConfigurationPolicyFromJson -PolicyData $policy.Data -PolicyName $policy.Name
         
         if (!$result) {
@@ -510,11 +453,13 @@ else {
     Write-Error "Cannot proceed without Microsoft Graph connection"
 }
 
-# Disconnect from Microsoft Graph
 try {
     Disconnect-MgGraph -ErrorAction SilentlyContinue
     Write-Host "Disconnected from Microsoft Graph" -ForegroundColor Green
 }
 catch {
-    # Ignore disconnect errors
 }
+
+Write-Host ""
+Write-Host "Press any key to close..." -ForegroundColor Yellow
+$null = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")
