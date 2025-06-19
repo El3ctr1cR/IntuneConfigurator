@@ -74,7 +74,7 @@ function Get-ConfigurationPoliciesFromFolder {
             Name                = "VWC BL - Restrict local administrator"
             Description         = "🛡️ Dit is een standaard VWC Baseline policy"
             Data                = @{
-                description       = "Restricts local administrator access using OMA-URI"
+                description       = "🛡️ Dit is een standaard VWC Baseline policy"
                 isManualOmaUri    = $true
                 omaUri           = "./Device/Vendor/MSFT/Policy/Config/LocalUsersAndGroups/Configure"
                 dataType         = "String"

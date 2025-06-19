@@ -1,0 +1,88 @@
+﻿{
+    "@odata.context": "https://graph.microsoft.com/beta/$metadata#deviceManagement/configurationPolicies/$entity",
+    "createdDateTime": "2025-06-19T21:30:39.9302375Z",
+    "creationSource": null,
+    "description": "🛡️ Dit is een standaard VWC Baseline policy",
+    "lastModifiedDateTime": "2025-06-19T21:30:39.9302375Z",
+    "name": "",
+    "platforms": "windows10",
+    "priorityMetaData": null,
+    "roleScopeTagIds": [
+        "0"
+    ],
+    "settingCount": 2,
+    "technologies": "mdm",
+    "id": "32bd6132-af2c-46ea-887f-99639d8cdfb8",
+    "templateReference": {
+        "templateId": "fcef01f2-439d-4c3f-9184-823fd6e97646_1",
+        "templateFamily": "endpointSecurityAccountProtection",
+        "templateDisplayName": "Account Protection",
+        "templateDisplayVersion": "Version 1"
+    },
+    "settings": [
+        {
+            "id": "0",
+            "settingInstance": {
+                "@odata.type": "#microsoft.graph.deviceManagementConfigurationGroupSettingCollectionInstance",
+                "settingDefinitionId": "device_vendor_msft_passportforwork_{tenantid}",
+                "settingInstanceTemplateReference": {
+                    "settingInstanceTemplateId": "0ece2bdc-57c1-4be9-93e9-ac9c395a9c94"
+                },
+                "groupSettingCollectionValue": [
+                    {
+                        "settingValueTemplateReference": null,
+                        "children": [
+                            {
+                                "@odata.type": "#microsoft.graph.deviceManagementConfigurationChoiceSettingInstance",
+                                "settingDefinitionId": "device_vendor_msft_passportforwork_{tenantid}_policies_usepassportforwork",
+                                "settingInstanceTemplateReference": {
+                                    "settingInstanceTemplateId": "4023eea0-5289-42de-a970-9b5759460de4"
+                                },
+                                "choiceSettingValue": {
+                                    "value": "device_vendor_msft_passportforwork_{tenantid}_policies_usepassportforwork_false",
+                                    "settingValueTemplateReference": {
+                                        "settingValueTemplateId": "92982814-15da-4812-8bbb-32c33f379651",
+                                        "useTemplateDefault": false
+                                    },
+                                    "children": []
+                                }
+                            }
+                        ]
+                    }
+                ]
+            }
+        },
+        {
+            "id": "1",
+            "settingInstance": {
+                "@odata.type": "#microsoft.graph.deviceManagementConfigurationGroupSettingCollectionInstance",
+                "settingDefinitionId": "user_vendor_msft_passportforwork_{tenantid}",
+                "settingInstanceTemplateReference": {
+                    "settingInstanceTemplateId": "7b19da4c-18c1-44c6-a422-2e928d376c4f"
+                },
+                "groupSettingCollectionValue": [
+                    {
+                        "settingValueTemplateReference": null,
+                        "children": [
+                            {
+                                "@odata.type": "#microsoft.graph.deviceManagementConfigurationChoiceSettingInstance",
+                                "settingDefinitionId": "user_vendor_msft_passportforwork_{tenantid}_policies_usepassportforwork",
+                                "settingInstanceTemplateReference": {
+                                    "settingInstanceTemplateId": "ac89a853-79f9-43d6-b8e4-084eeb21de0c"
+                                },
+                                "choiceSettingValue": {
+                                    "value": "user_vendor_msft_passportforwork_{tenantid}_policies_usepassportforwork_false",
+                                    "settingValueTemplateReference": {
+                                        "settingValueTemplateId": "5015b5dd-acaf-461c-88e6-a4fff2011e6f",
+                                        "useTemplateDefault": false
+                                    },
+                                    "children": []
+                                }
+                            }
+                        ]
+                    }
+                ]
+            }
+        }
+    ]
+}
