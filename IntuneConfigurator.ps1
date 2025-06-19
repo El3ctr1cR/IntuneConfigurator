@@ -68,12 +68,33 @@ function Get-ConfigurationPoliciesFromFolder {
     try {
         $configFiles = Get-ChildItem -Path $ConfigFolderPath -Filter "*.json" -ErrorAction Stop
         
-        if ($configFiles.Count -eq 0) {
-            Write-Warning "No JSON configuration files found"
-            return @()
+        $policies = @()
+        
+        $manualPolicy = @{
+            Name                = "VWC BL - Restrict local administrator"
+            Description         = "🛡️ Dit is een standaard VWC Baseline policy"
+            Data                = @{
+                description       = "Restricts local administrator access using OMA-URI"
+                isManualOmaUri    = $true
+                omaUri           = "./Device/Vendor/MSFT/Policy/Config/LocalUsersAndGroups/Configure"
+                dataType         = "String"
+                value            = @"
+<GroupConfiguration>
+    <accessgroup desc="Administrators">
+        <group action="R" />
+        <add member="Administrator"/>
+    </accessgroup>
+</GroupConfiguration>
+"@
+            }
+            RequiresEntraConfig = $false
+            RequiresEdgeSync    = $false
+            RequiresTenantId    = $false
+            FileName            = "Manual OMA-URI Policy"
+            IsManual            = $true
         }
         
-        $policies = @()
+        $policies += $manualPolicy
         
         foreach ($file in $configFiles) {
             try {
@@ -84,6 +105,8 @@ function Get-ConfigurationPoliciesFromFolder {
                 $baseName = [System.IO.Path]::GetFileNameWithoutExtension($file.Name)
                 
                 $requiresEntraConfig = $baseName -like "*LAPS*"
+                $requiresEdgeSync = $baseName -like "*Edge force sync*"
+                $requiresTenantId = $baseName -like "*OneDrive silently move Windows known folders*"
                 
                 $policy = @{
                     Name                = "VWC BL - $baseName"
@@ -96,7 +119,10 @@ function Get-ConfigurationPoliciesFromFolder {
                         settings          = $policyData.settings
                     }
                     RequiresEntraConfig = $requiresEntraConfig
+                    RequiresEdgeSync    = $requiresEdgeSync
+                    RequiresTenantId    = $requiresTenantId
                     FileName            = $file.Name
+                    IsManual            = $false
                 }
                 
                 $policies += $policy
@@ -148,6 +174,146 @@ function Get-TenantId {
     }
 }
 
+function Update-OneDrivePolicyWithTenantId {
+    param(
+        [Parameter(Mandatory = $true)]
+        [PSCustomObject]$PolicyData,
+        [Parameter(Mandatory = $true)]
+        [string]$TenantId
+    )
+    
+    try {
+        Write-Host "Updating OneDrive policy with Tenant ID ($TenantId)..." -ForegroundColor Yellow
+        
+        foreach ($setting in $PolicyData.settings) {
+            if ($setting.settingInstance -and 
+                $setting.settingInstance.'@odata.type' -eq "#microsoft.graph.deviceManagementConfigurationChoiceSettingInstance") {
+                
+                $updated = Update-TenantIdInChildren -Children $setting.settingInstance.choiceSettingValue.children -TenantId $TenantId
+                if ($updated) {
+                    Write-Host "✓ Successfully updated Tenant ID in OneDrive policy settings" -ForegroundColor Green
+                    return $true
+                }
+            }
+        }
+        
+        Write-Warning "Could not find tenant ID setting in OneDrive policy"
+        return $false
+    }
+    catch {
+        Write-Error "Failed to update OneDrive policy with Tenant ID: $($_.Exception.Message)"
+        return $false
+    }
+}
+
+function Update-TenantIdInChildren {
+    param(
+        [Parameter(Mandatory = $true)]
+        [array]$Children,
+        [Parameter(Mandatory = $true)]
+        [string]$TenantId
+    )
+    
+    foreach ($child in $Children) {
+        if ($child.'@odata.type' -eq "#microsoft.graph.deviceManagementConfigurationSimpleSettingInstance" -and 
+            $child.settingDefinitionId -eq "device_vendor_msft_policy_config_onedrivengscv2.updates~policy~onedrivengsc_kfmoptinnowizard_kfmoptinnowizard_textbox") {
+            
+            $child.simpleSettingValue.value = $TenantId
+            Write-Host "✓ Found and updated tenant ID setting" -ForegroundColor Green
+            return $true
+        }
+        
+        if ($child.choiceSettingValue -and $child.choiceSettingValue.children) {
+            $updated = Update-TenantIdInChildren -Children $child.choiceSettingValue.children -TenantId $TenantId
+            if ($updated) {
+                return $true
+            }
+        }
+    }
+    
+    return $false
+}
+
+function New-ManualOmaUriPolicy {
+    param(
+        [Parameter(Mandatory = $true)]
+        [PSCustomObject]$PolicyData,
+        [Parameter(Mandatory = $true)]
+        [string]$PolicyName
+    )
+    
+    try {
+        Write-Host "Creating manual OMA-URI policy: $PolicyName..." -ForegroundColor Yellow
+        
+        $policyBody = @{
+            name = $PolicyName
+            description = $PolicyData.description
+            platforms = "windows10"
+            technologies = "mdm"
+            settings = @(
+                @{
+                    "@odata.type" = "#microsoft.graph.deviceManagementConfigurationSetting"
+                    settingInstance = @{
+                        "@odata.type" = "#microsoft.graph.deviceManagementConfigurationSimpleSettingInstance"
+                        settingDefinitionId = "custom_" + [guid]::NewGuid().ToString()
+                        simpleSettingValue = @{
+                            "@odata.type" = "#microsoft.graph.deviceManagementConfigurationStringSettingValue"
+                            value = $PolicyData.value
+                        }
+                    }
+                }
+            )
+        }
+        
+        $legacyPolicyBody = @{
+            "@odata.type" = "#microsoft.graph.windows10CustomConfiguration"
+            displayName = $PolicyName
+            description = $PolicyData.description
+            omaSettings = @(
+                @{
+                    "@odata.type" = "#microsoft.graph.omaSettingString"
+                    displayName = "Restrict Local Administrator"
+                    description = "Restricts local administrator access"
+                    omaUri = $PolicyData.omaUri
+                    value = $PolicyData.value
+                }
+            )
+        }
+        
+        $jsonBody = $legacyPolicyBody | ConvertTo-Json -Depth 20
+        
+        $uri = "https://graph.microsoft.com/beta/deviceManagement/deviceConfigurations"
+        
+        try {
+            $response = Invoke-MgGraphRequest -Uri $uri -Method POST -Body $jsonBody -ContentType "application/json" -ErrorAction Stop
+            
+            if ($response.id) {
+                Write-Host "Successfully created OMA-URI policy: $PolicyName (ID: $($response.id))" -ForegroundColor Green
+                
+                $assignmentSuccess = Set-LegacyPolicyAssignments -PolicyId $response.id -PolicyName $PolicyName
+                
+                if (!$assignmentSuccess) {
+                    Write-Warning "Policy '$PolicyName' created but assignment failed"
+                }
+                
+                return $response
+            }
+            else {
+                Write-Error "Failed to create OMA-URI policy: $PolicyName - No ID returned"
+                return $null
+            }
+        }
+        catch {
+            Write-Error "Graph API request failed for OMA-URI policy: $($_.Exception.Message)"
+            return $null
+        }
+    }
+    catch {
+        Write-Error "Error creating OMA-URI policy $PolicyName : $($_.Exception.Message)"
+        return $null
+    }
+}
+
 function New-ConfigurationPolicyFromJson {
     param(
         [Parameter(Mandatory = $true)]
@@ -167,24 +333,6 @@ function New-ConfigurationPolicyFromJson {
         }
         
         $policyBody = $PolicyData | ConvertTo-Json -Depth 20 | ConvertFrom-Json
-        
-        if ($PolicyName -like "*OneDrive silently move Windows known folders*") {
-            Write-Host "Detected OneDrive policy - retrieving Tenant ID..." -ForegroundColor Yellow
-            $tenantId = Get-TenantId
-            if (-not $tenantId) {
-                Write-Error "Cannot proceed with OneDrive policy creation without Tenant ID"
-                return $null
-            }
-            
-            foreach ($setting in $policyBody.settings) {
-                if ($setting.'@odata.type' -eq "#microsoft.graph.deviceManagementConfigurationSimpleSettingInstance" -and 
-                    $setting.settingDefinitionId -eq "device_vendor_msft_policy_config_onedrivengscv2.updates~policy~onedrivengsc_kfmoptinnowizard_kfmoptinnowizard_textbox") {
-                    $setting.simpleSettingValue.value = $tenantId
-                    Write-Host "Inserted Tenant ID ($tenantId) into OneDrive policy settings" -ForegroundColor Green
-                    break
-                }
-            }
-        }
         
         $policyBody = @{
             name         = $PolicyName
@@ -280,6 +428,45 @@ function Set-PolicyAssignments {
     }
 }
 
+function Set-LegacyPolicyAssignments {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$PolicyId,
+        [Parameter(Mandatory = $true)]
+        [string]$PolicyName
+    )
+    
+    try {
+        Write-Host "Assigning legacy policy '$PolicyName' to All Devices..." -ForegroundColor Yellow
+        
+        $assignmentBody = @{
+            deviceConfigurationGroupAssignments = @(
+                @{
+                    targetGroupId = "00000000-0000-0000-0000-000000000000"
+                }
+            )
+        }
+        
+        $jsonBody = $assignmentBody | ConvertTo-Json -Depth 10
+        
+        $uri = "https://graph.microsoft.com/beta/deviceManagement/deviceConfigurations('$PolicyId')/assign"
+        
+        try {
+            $response = Invoke-MgGraphRequest -Uri $uri -Method POST -Body $jsonBody -ContentType "application/json" -ErrorAction Stop
+            Write-Host "✓ Successfully assigned legacy policy '$PolicyName' to All Devices" -ForegroundColor Green
+            return $true
+        }
+        catch {
+            Write-Error "Failed to assign legacy policy '$PolicyName': $($_.Exception.Message)"
+            return $false
+        }
+    }
+    catch {
+        Write-Error "Failed to assign legacy policy '$PolicyName': $($_.Exception.Message)"
+        return $false
+    }
+}
+
 function Test-PolicyExists {
     param(
         [Parameter(Mandatory = $true)]
@@ -288,6 +475,13 @@ function Test-PolicyExists {
     
     try {
         $uri = "https://graph.microsoft.com/beta/deviceManagement/configurationPolicies?`$filter=name eq '$PolicyName'"
+        $response = Invoke-MgGraphRequest -Uri $uri -Method GET
+        
+        if ($response.value.Count -gt 0) {
+            return $true
+        }
+        
+        $uri = "https://graph.microsoft.com/beta/deviceManagement/deviceConfigurations?`$filter=displayName eq '$PolicyName'"
         $response = Invoke-MgGraphRequest -Uri $uri -Method GET
         
         return ($response.value.Count -gt 0)
@@ -320,7 +514,7 @@ function Enable-LAPSInEntraID {
         
         $currentPolicy.localAdminPassword.isEnabled = $true
         
-        $updateJson = $currentPolicy | ConvertTo-Json -Depth 10
+        $updateson = $currentPolicy | ConvertTo-Json -Depth 10
         
         Invoke-MgGraphRequest -Method PUT -Uri $uri -Body $updateJson -ContentType "application/json" -ErrorAction Stop
         
@@ -333,44 +527,71 @@ function Enable-LAPSInEntraID {
     }
 }
 
+function Request-EdgeSyncConfiguration {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$PolicyName
+    )
+    
+    Write-Host ""
+    Write-Host "⚠️  MANUAL CONFIGURATION REQUIRED FOR: $PolicyName" -ForegroundColor Red
+    Write-Host "================================================================" -ForegroundColor Red
+    Write-Host ""
+    Write-Host "Before continuing, you need to enable Enterprise State Roaming:" -ForegroundColor Yellow
+    Write-Host ""
+    Write-Host "1. Go to: https://entra.microsoft.com/#view/Microsoft_AAD_Devices/DevicesMenuBlade/~/RoamingSettings/menuId/Devices?Microsoft_AAD_IAM_legacyAADRedirect=true" -ForegroundColor Cyan
+    Write-Host ""
+    Write-Host "2. Enable 'Users may sync settings and app data across devices' in Enterprise State Roaming" -ForegroundColor Cyan
+    Write-Host ""
+    Write-Host "3. Press any key here to continue after completing the above steps..." -ForegroundColor Yellow
+    
+    $null = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")
+    Write-Host ""
+    Write-Host "✓ Continuing with policy creation..." -ForegroundColor Green
+    Write-Host ""
+}
+
 function Show-PolicySelectionMenu {
     param(
         [Parameter(Mandatory = $true)]
         [array]$AvailablePolicies
     )
     
-    Write-Host "=== Configuration Policy Selection ===" -ForegroundColor Cyan
-    Write-Host "Go through each policy and select Y (Yes) or N (No)" -ForegroundColor Yellow
+    Write-Host "=== Available Configuration Policies ===" -ForegroundColor Cyan
     Write-Host ""
     
     $selectedPolicies = @()
     
-    for ($i = 0; $i -lt $AvailablePolicies.Count; $i++) {
-        $policy = $AvailablePolicies[$i]
-        Write-Host "Policy: $($policy.Name)" -ForegroundColor White
+    foreach ($policy in $AvailablePolicies) {
+        $policyType = if ($policy.IsManual) { " [OMA-URI]" } else { "" }
+        $specialReqs = @()
+        if ($policy.RequiresEntraConfig) { $specialReqs += "LAPS Config" }
+        if ($policy.RequiresEdgeSync) { $specialReqs += "Edge Sync Config" }
+        if ($policy.RequiresTenantId) { $specialReqs += "Tenant ID" }
+        $reqText = if ($specialReqs.Count -gt 0) { " [Requires: $($specialReqs -join ', ')]" } else { "" }
+        
+        Write-Host "Policy: $($policy.Name)$policyType$reqText" -ForegroundColor White
         Write-Host "Description: $($policy.Description)" -ForegroundColor Gray
         Write-Host "Source: $($policy.FileName)" -ForegroundColor DarkGray
+        Write-Host ""
         
-        do {
-            Write-Host "Select this policy? (Y/N): " -ForegroundColor Yellow -NoNewline
+        while ($true) {
+            Write-Host "Do you want to select this policy? (Y/N): " -ForegroundColor Yellow -NoNewline
             $selection = Read-Host
-            $selection = $selection.Trim().ToUpper()
             
-            if ($selection -eq 'Y') {
+            if ($selection -match '^[Yy]$') {
                 $selectedPolicies += $policy
-                Write-Host "✓ Added: $($policy.Name)" -ForegroundColor Green
-                $validSelection = $true
+                Write-Host "Selected: $($policy.Name)" -ForegroundColor Green
+                break
             }
-            elseif ($selection -eq 'N') {
-                Write-Host "✗ Skipped: $($policy.Name)" -ForegroundColor Red
-                $validSelection = $true
+            elseif ($selection -match '^[Nn]$') {
+                Write-Host "Skipped: $($policy.Name)" -ForegroundColor Yellow
+                break
             }
             else {
-                Write-Host "Invalid selection. Please enter Y or N." -ForegroundColor Red
-                $validSelection = $false
+                Write-Host "Invalid input. Please enter Y or N." -ForegroundColor Red
             }
-        } while (-not $validSelection)
-        
+        }
         Write-Host ""
     }
     
@@ -396,18 +617,16 @@ if ($availablePolicies.Count -eq 0) {
     return
 }
 
-Write-Host "Loaded $($availablePolicies.Count) configuration file(s)" -ForegroundColor Green
+Write-Host "Loaded $($availablePolicies.Count) configuration file(s) (including manual policies)" -ForegroundColor Green
 Write-Host ""
 
 if (Connect-ToMSGraph) {
-    Clear-Host
+    Write-Host ""
     
     $selectedPolicies = Show-PolicySelectionMenu -AvailablePolicies $availablePolicies
     
     if ($selectedPolicies.Count -eq 0) {
         Write-Host "No policies selected. Exiting..." -ForegroundColor Yellow
-        Write-Host "Press any key to close..." -ForegroundColor Yellow
-        $null = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")
         return
     }
     
@@ -422,6 +641,16 @@ if (Connect-ToMSGraph) {
     $null = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")
     Write-Host ""
     
+    $tenantId = $null
+    $needsTenantId = $selectedPolicies | Where-Object { $_.RequiresTenantId }
+    if ($needsTenantId) {
+        $tenantId = Get-TenantId
+        if (-not $tenantId) {
+            Write-Error "Cannot proceed with OneDrive policies without Tenant ID"
+            return
+        }
+    }
+    
     foreach ($policy in $selectedPolicies) {
         Write-Host "Processing policy: $($policy.Name)" -ForegroundColor Yellow
         
@@ -435,7 +664,25 @@ if (Connect-ToMSGraph) {
             Enable-LAPSInEntraID
         }
         
-        $result = New-ConfigurationPolicyFromJson -PolicyData $policy.Data -PolicyName $policy.Name
+        if ($policy.RequiresEdgeSync) {
+            Request-EdgeSyncConfiguration -PolicyName $policy.Name
+        }
+        
+        if ($policy.RequiresTenantId -and $tenantId) {
+            Write-Host "OneDrive policy selected - updating with Tenant ID..." -ForegroundColor Yellow
+            $updated = Update-OneDrivePolicyWithTenantId -PolicyData $policy.Data -TenantId $tenantId
+            if (-not $updated) {
+                Write-Warning "Failed to update OneDrive policy with Tenant ID. Proceeding anyway..."
+            }
+        }
+        
+        $result = $null
+        if ($policy.IsManual) {
+            $result = New-ManualOmaUriPolicy -PolicyData $policy.Data -PolicyName $policy.Name
+        }
+        else {
+            $result = New-ConfigurationPolicyFromJson -PolicyData $policy.Data -PolicyName $policy.Name
+        }
         
         if (!$result) {
             Write-Error "✗ Failed to create policy: $($policy.Name)"
@@ -459,7 +706,3 @@ try {
 }
 catch {
 }
-
-Write-Host ""
-Write-Host "Press any key to close..." -ForegroundColor Yellow
-$null = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")
