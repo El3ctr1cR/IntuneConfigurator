@@ -1,9 +1,9 @@
 ﻿{
     "@odata.context": "https://graph.microsoft.com/beta/$metadata#deviceManagement/configurationPolicies/$entity",
-    "createdDateTime": "2025-06-19T21:30:39.9302375Z",
+    "createdDateTime": "",
     "creationSource": null,
     "description": "🛡️ Dit is een standaard VWC Baseline policy",
-    "lastModifiedDateTime": "2025-06-19T21:30:39.9302375Z",
+    "lastModifiedDateTime": "",
     "name": "",
     "platforms": "windows10",
     "priorityMetaData": null,

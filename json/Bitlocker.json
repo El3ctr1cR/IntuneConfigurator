@@ -1,0 +1,78 @@
+﻿{
+    "@odata.context": "https://graph.microsoft.com/beta/$metadata#deviceManagement/configurationPolicies/$entity",
+    "createdDateTime": "",
+    "creationSource": null,
+    "description": "🛡️ Dit is een standaard VWC Baseline policy",
+    "lastModifiedDateTime": "",
+    "name": "",
+    "platforms": "windows10",
+    "priorityMetaData": null,
+    "roleScopeTagIds": [
+        "0"
+    ],
+    "settingCount": 3,
+    "technologies": "mdm",
+    "id": "3bb631b2-353f-4b68-98f7-53c578036fd7",
+    "templateReference": {
+        "templateId": "46ddfc50-d10f-4867-b852-9434254b3bff_1",
+        "templateFamily": "endpointSecurityDiskEncryption",
+        "templateDisplayName": "BitLocker",
+        "templateDisplayVersion": "Version 1"
+    },
+    "settings": [
+        {
+            "id": "0",
+            "settingInstance": {
+                "@odata.type": "#microsoft.graph.deviceManagementConfigurationChoiceSettingInstance",
+                "settingDefinitionId": "device_vendor_msft_bitlocker_requiredeviceencryption",
+                "settingInstanceTemplateReference": {
+                    "settingInstanceTemplateId": "20ec1f6e-0d7a-4b6f-9a4f-9ed33e69ce51"
+                },
+                "choiceSettingValue": {
+                    "value": "device_vendor_msft_bitlocker_requiredeviceencryption_1",
+                    "settingValueTemplateReference": {
+                        "settingValueTemplateId": "86da5fa5-67cf-48d1-8215-8787a9900ae6",
+                        "useTemplateDefault": false
+                    },
+                    "children": []
+                }
+            }
+        },
+        {
+            "id": "1",
+            "settingInstance": {
+                "@odata.type": "#microsoft.graph.deviceManagementConfigurationChoiceSettingInstance",
+                "settingDefinitionId": "device_vendor_msft_bitlocker_allowwarningforotherdiskencryption",
+                "settingInstanceTemplateReference": {
+                    "settingInstanceTemplateId": "e40531ee-2225-406b-b07b-1c17186c088c"
+                },
+                "choiceSettingValue": {
+                    "value": "device_vendor_msft_bitlocker_allowwarningforotherdiskencryption_1",
+                    "settingValueTemplateReference": {
+                        "settingValueTemplateId": "7d348597-0f2a-43db-9fad-8b55c4f89bfe",
+                        "useTemplateDefault": false
+                    },
+                    "children": []
+                }
+            }
+        },
+        {
+            "id": "2",
+            "settingInstance": {
+                "@odata.type": "#microsoft.graph.deviceManagementConfigurationChoiceSettingInstance",
+                "settingDefinitionId": "device_vendor_msft_bitlocker_configurerecoverypasswordrotation",
+                "settingInstanceTemplateReference": {
+                    "settingInstanceTemplateId": "48c938a7-afa0-40ef-914f-40b5da5735b4"
+                },
+                "choiceSettingValue": {
+                    "value": "device_vendor_msft_bitlocker_configurerecoverypasswordrotation_0",
+                    "settingValueTemplateReference": {
+                        "settingValueTemplateId": "48278072-3b30-48e9-b654-ad683fdb9aae",
+                        "useTemplateDefault": false
+                    },
+                    "children": []
+                }
+            }
+        }
+    ]
+}
