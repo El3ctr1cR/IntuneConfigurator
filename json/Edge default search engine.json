@@ -1,8 +1,9 @@
 ﻿{
     "@odata.context": "https://graph.microsoft.com/beta/$metadata#deviceManagement/configurationPolicies/$entity",
+    "assignment": "devices",
     "createdDateTime": "",
     "creationSource": null,
-    "description": "🛡️ Dit is een standaard VWC Baseline policy",
+    "description": "Stelt Google als standaard zoekmachine in bij Microsoft Edge i.p.v. Bing",
     "lastModifiedDateTime": "",
     "name": "",
     "platforms": "windows10",

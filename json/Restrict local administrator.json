@@ -1,8 +1,9 @@
 ﻿{
     "@odata.context": "https://graph.microsoft.com/beta/$metadata#deviceManagement/configurationPolicies/$entity",
+    "assignment": "devices",
     "createdDateTime": "",
     "creationSource": null,
-    "description": "🛡️ Dit is een standaard VWC Baseline policy",
+    "description": "Dit zorgt er voor dat alle gebruikers van de administrator groep worden afgehaald",
     "lastModifiedDateTime": "",
     "name": "",
     "platforms": "windows10",
