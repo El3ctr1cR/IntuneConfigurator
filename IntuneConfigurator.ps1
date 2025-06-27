@@ -924,7 +924,7 @@ function Set-ESPAssignments {
         }
         
         $assignmentBody = @{
-            assignments = @(
+            enrollmentConfigurationAssignments = @(
                 @{
                     target = @{
                         "@odata.type" = "#microsoft.graph.groupAssignmentTarget"
@@ -945,6 +945,10 @@ function Set-ESPAssignments {
         }
         catch {
             Write-Error "Failed to assign ESP profile '$ProfileName': $($_.Exception.Message)"
+            if ($_.Exception.Response) {
+                $errorContent = $_.Exception.Response.Content.ReadAsStringAsync().Result
+                Write-Error "Error details: $errorContent"
+            }
             return $false
         }
     }
