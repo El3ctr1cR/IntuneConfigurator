@@ -411,6 +411,42 @@ function Get-ESPProfilesFromFolder {
     }
 }
 
+function Validate-DeviceNameTemplate {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$Template
+    )
+    
+    # Rules:
+    # - 15 characters or less (after macro expansion, we'll check raw length)
+    # - Letters (a-z, A-Z), numbers (0-9), hyphens only
+    # - No spaces
+    # - Not only numbers
+    # - Can include %SERIAL% or %RAND:x%
+    
+    if ($Template.Length -gt 15) {
+        Write-Error "Device name template must be 15 characters or less (current length: $($Template.Length))."
+        return $false
+    }
+    
+    if ($Template -match '\s') {
+        Write-Error "Device name template cannot contain spaces."
+        return $false
+    }
+    
+    if ($Template -match '^[0-9]+$') {
+        Write-Error "Device name template cannot consist only of numbers."
+        return $false
+    }
+    
+    if ($Template -notmatch '^[a-zA-Z0-9\-]+(%SERIAL%|%RAND:\d+%)?$') {
+        Write-Error "Device name template can only contain letters (a-z, A-Z), numbers (0-9), hyphens, %SERIAL%, or %RAND:x% (where x is a number)."
+        return $false
+    }
+    
+    return $true
+}
+
 function New-AutopilotProfile {
     param(
         [Parameter(Mandatory = $true)]
@@ -423,6 +459,24 @@ function New-AutopilotProfile {
         Write-Host "Creating Autopilot profile: $ProfileName..." -ForegroundColor Yellow
         
         $cleanProfileData = Remove-ReadOnlyProperties -JsonObject $ProfileData
+        
+        # Prompt for device name template
+        Write-Host "Enter a device name template for '$ProfileName' (e.g., DESKTOP-%SERIAL%, PC-%RAND:5%)" -ForegroundColor Yellow
+        Write-Host "Requirements: 15 characters or less, letters/numbers/hyphens only, no spaces, not only numbers, supports %SERIAL% or %RAND:x%." -ForegroundColor Yellow
+        
+        $deviceNameTemplate = $null
+        while (-not $deviceNameTemplate) {
+            $inputTemplate = Read-Host "Device Name Template"
+            if (Validate-DeviceNameTemplate -Template $inputTemplate) {
+                $deviceNameTemplate = $inputTemplate
+            }
+            else {
+                Write-Host "Invalid template. Please try again." -ForegroundColor Red
+            }
+        }
+        
+        # Update the deviceNameTemplate in the profile data
+        $cleanProfileData.deviceNameTemplate = $deviceNameTemplate
         
         $autopilotProfileData = @{
             "@odata.type" = "#microsoft.graph.azureADWindowsAutopilotDeploymentProfile"
