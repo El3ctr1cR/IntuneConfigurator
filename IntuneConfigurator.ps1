@@ -1195,24 +1195,25 @@ function Update-TenantIdInChildren {
         [string]$TenantId
     )
     
+    $updated = $false
+    
     foreach ($child in $Children) {
         if ($child.'@odata.type' -eq "#microsoft.graph.deviceManagementConfigurationSimpleSettingInstance" -and 
-            $child.settingDefinitionId -eq "device_vendor_msft_policy_config_onedrivengscv2_updates~policy~onedrivengsc_kfmoptinnowizard_kfmoptinnowizard_textbox") {
+            $child.settingDefinitionId -match "onedrivengsc.*_kfmoptinnowizard_textbox") {
             
             $child.simpleSettingValue.value = $TenantId
-            Write-Host "✓ Found and updated tenant ID setting" -ForegroundColor Green
-            return $true
+            Write-Host "✓ Found and updated Tenant ID setting ($($child.settingDefinitionId))" -ForegroundColor Green
+            $updated = $true
         }
-        
-        if ($child.choiceSettingValue -and $child.choiceSettingValue.children) {
-            $updated = Update-TenantIdInChildren -Children $child.choiceSettingValue.children -TenantId $TenantId
-            if ($updated) {
-                return $true
+        elseif ($child.choiceSettingValue -and $child.choiceSettingValue.children) {
+            $nestedUpdated = Update-TenantIdInChildren -Children $child.choiceSettingValue.children -TenantId $TenantId
+            if ($nestedUpdated) {
+                $updated = $true
             }
         }
     }
     
-    return $false
+    return $updated
 }
 
 function Enable-LAPSInEntraID {
