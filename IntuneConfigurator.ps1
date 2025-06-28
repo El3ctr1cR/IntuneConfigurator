@@ -1,6 +1,4 @@
-﻿# Enhanced Intune Configuration Script with Autopilot and ESP Support
-
-$Modules = @(
+﻿$Modules = @(
     @{Name = "Microsoft.Graph.Authentication"; MinVersion = "1.0.0" },
     @{Name = "Microsoft.Graph.DeviceManagement"; MinVersion = "1.0.0" },
     @{Name = "Microsoft.Graph.Identity.SignIns"; MinVersion = "1.0.0" },
@@ -27,8 +25,8 @@ $GraphScopes = @(
 $ConfigFolderPath = Join-Path $PSScriptRoot "json"
 $AutopilotFolderPath = Join-Path $PSScriptRoot "autopilot"
 $ESPFolderPath = Join-Path $PSScriptRoot "esp"
+$AppsFolderPath = Join-Path $PSScriptRoot "apps"
 
-# Global variables to store group IDs
 $Script:AutopilotDevicesGroupId = $null
 $Script:AutopilotUsersGroupId = $null
 
@@ -58,7 +56,8 @@ function Initialize-ConfigFolders {
     $foldersToCheck = @(
         @{Path = $ConfigFolderPath; Name = "Configuration Policies"},
         @{Path = $AutopilotFolderPath; Name = "Autopilot Profiles"},
-        @{Path = $ESPFolderPath; Name = "Enrollment Status Page Profiles"}
+        @{Path = $ESPFolderPath; Name = "Enrollment Status Page Profiles"},
+        @{Path = $AppsFolderPath; Name = "Applications"}
     )
     
     $foundConfigs = $false
@@ -79,6 +78,7 @@ function Initialize-ConfigFolders {
         Write-Host "  - $ConfigFolderPath (for configuration policies)" -ForegroundColor Yellow
         Write-Host "  - $AutopilotFolderPath (for autopilot profiles)" -ForegroundColor Yellow
         Write-Host "  - $ESPFolderPath (for enrollment status page profiles)" -ForegroundColor Yellow
+        Write-Host "  - $AppsFolderPath (for applications)" -ForegroundColor Yellow  # Added
         return $false
     }
     
@@ -191,7 +191,6 @@ function Remove-ReadOnlyProperties {
     
     $propertiesToRemove = @(
         '@odata.context',
-        '@odata.type',
         '@odata.id',
         '@odata.editLink',
         'id',
@@ -215,7 +214,7 @@ function Remove-ReadOnlyProperties {
             return
         }
         
-        if ($propertyName.StartsWith('@') -or $propertyName.StartsWith('#')) {
+        if ($propertyName.StartsWith('@') -and $propertyName -ne '@odata.type') {
             return
         }
         
@@ -411,6 +410,48 @@ function Get-ESPProfilesFromFolder {
     }
 }
 
+function Get-AppConfigurationsFromFolder {
+    try {
+        if (-not (Test-Path $AppsFolderPath)) {
+            return @()
+        }
+        
+        $configFiles = Get-ChildItem -Path $AppsFolderPath -Filter "*.json" -ErrorAction Stop
+        $apps = @()
+        
+        foreach ($file in $configFiles) {
+            try {
+                $jsonContent = Get-Content -Path $file.FullName -Raw -ErrorAction Stop
+                $jsonContent = $jsonContent -replace '^\uFEFF', ''
+                $appData = $jsonContent | ConvertFrom-Json -ErrorAction Stop
+                
+                $baseName = [System.IO.Path]::GetFileNameWithoutExtension($file.Name)
+                
+                $app = @{
+                    Name = "VWC BL - $baseName"
+                    Description = "🛡️ Dit is een standaard VWC Baseline application"
+                    Data = Remove-ReadOnlyProperties -JsonObject $appData
+                    FileName = $file.Name
+                    Type = "App"
+                    Assignment = if ($appData.PSObject.Properties.Name -contains 'assignment') { $appData.assignment } else { "devices" }
+                }
+                
+                $apps += $app
+            }
+            catch {
+                Write-Warning "Failed to load app configuration from $($file.Name): $($_.Exception.Message)"
+                continue
+            }
+        }
+        
+        return $apps
+    }
+    catch {
+        Write-Error "Failed to load app configuration files: $($_.Exception.Message)"
+        return @()
+    }
+}
+
 function Validate-DeviceNameTemplate {
     param(
         [Parameter(Mandatory = $true)]
@@ -460,7 +501,6 @@ function New-AutopilotProfile {
         
         $cleanProfileData = Remove-ReadOnlyProperties -JsonObject $ProfileData
         
-        # Prompt for device name template
         Write-Host "Enter a device name template for '$ProfileName' (e.g., DESKTOP-%SERIAL%, PC-%RAND:5%)" -ForegroundColor Yellow
         Write-Host "Requirements: 15 characters or less, letters/numbers/hyphens only, no spaces, not only numbers, supports %SERIAL% or %RAND:x%." -ForegroundColor Yellow
         
@@ -475,7 +515,6 @@ function New-AutopilotProfile {
             }
         }
         
-        # Update the deviceNameTemplate in the profile data
         $cleanProfileData.deviceNameTemplate = $deviceNameTemplate
         
         $autopilotProfileData = @{
@@ -786,6 +825,150 @@ function New-ManualOmaUriPolicy {
     }
 }
 
+function New-AppFromJson {
+    param(
+        [Parameter(Mandatory = $true)]
+        [PSCustomObject]$AppData,
+        [Parameter(Mandatory = $true)]
+        [string]$AppName
+    )
+    
+    try {
+        Write-Host "Creating application: $AppName..." -ForegroundColor Yellow
+        
+        $cleanAppData = Remove-ReadOnlyProperties -JsonObject $AppData
+        $odataType = $cleanAppData.'@odata.type'
+        
+        if (-not $odataType) {
+            Write-Error "Missing @odata.type in app configuration for $AppName. Please ensure the JSON includes a valid @odata.type (e.g., #microsoft.graph.officeSuiteApp or #microsoft.graph.winGetApp)."
+            return $null
+        }
+        
+        $appBody = @{
+            "@odata.type" = $odataType
+            displayName = $AppName
+            description = "🛡️ Dit is een standaard VWC Baseline application"
+        }
+        
+        # Common properties for all app types
+        $commonProperties = @(
+            'publisher',
+            'isFeatured',
+            'privacyInformationUrl',
+            'informationUrl',
+            'owner',
+            'developer',
+            'notes',
+            'largeIcon',
+            'categories'
+        )
+        
+        foreach ($property in $commonProperties) {
+            if ($cleanAppData.PSObject.Properties.Name -contains $property) {
+                $appBody[$property] = $cleanAppData.$property
+            }
+        }
+        
+        # Microsoft 365 app-specific properties
+        if ($odataType -eq "#microsoft.graph.officeSuiteApp") {
+            $officeProperties = @(
+                'autoAcceptEula',
+                'productIds',
+                'useSharedComputerActivation',
+                'updateChannel',
+                'officeSuiteAppDefaultFileFormat',
+                'officePlatformArchitecture',
+                'localesToInstall',
+                'installProgressDisplayLevel',
+                'shouldUninstallOlderVersionsOfOffice',
+                'targetVersion',
+                'updateVersion',
+                'officeConfigurationXml',
+                'excludedApps'
+            )
+            
+            foreach ($property in $officeProperties) {
+                if ($cleanAppData.PSObject.Properties.Name -contains $property) {
+                    $appBody[$property] = $cleanAppData.$property
+                }
+            }
+        }
+        # WinGet app-specific properties
+        elseif ($odataType -eq "#microsoft.graph.winGetApp") {
+            $winGetProperties = @(
+                'packageIdentifier',
+                'installExperience',
+                'manifestHash'
+            )
+            
+            foreach ($property in $winGetProperties) {
+                if ($cleanAppData.PSObject.Properties.Name -contains $property) {
+                    $appBody[$property] = $cleanAppData.$property
+                }
+            }
+        }
+        else {
+            Write-Warning "Unsupported app type: $odataType. Only #microsoft.graph.officeSuiteApp and #microsoft.graph.winGetApp are currently supported."
+            return $null
+        }
+        
+        if ($appBody.largeIcon -and ($appBody.largeIcon.value -eq "" -or $appBody.largeIcon.value -eq $null)) {
+            $appBody.largeIcon = $null
+        }
+        
+        if ($appBody.categories) {
+            $appBody.categories = @($appBody.categories | ForEach-Object {
+                @{
+                    displayName = $_.displayName
+                }
+            })
+        }
+        
+        $jsonBody = $appBody | ConvertTo-Json -Depth 20
+        
+        $uri = "https://graph.microsoft.com/beta/deviceAppManagement/mobileApps"
+        
+        try {
+            $response = Invoke-MgGraphRequest -Uri $uri -Method POST -Body $jsonBody -ContentType "application/json" -ErrorAction Stop
+            
+            if ($response.id) {
+                Write-Host "Successfully created application: $AppName (ID: $($response.id))" -ForegroundColor Green
+                
+                # Use the Assignment property from the item object
+                $assignmentType = $item.Assignment
+                if (-not $assignmentType) {
+                    Write-Warning "No assignment type specified for $AppName. Defaulting to devices."
+                    $assignmentType = "devices"
+                }
+                
+                $assignmentSuccess = Set-AppAssignments -AppId $response.id -AppName $AppName -AssignmentType $assignmentType
+                
+                if (!$assignmentSuccess) {
+                    Write-Warning "Application '$AppName' created but assignment failed"
+                }
+                
+                return $response
+            }
+            else {
+                Write-Error "Failed to create application: $AppName - No ID returned"
+                return $null
+            }
+        }
+        catch {
+            Write-Error "Graph API request failed for application: $($_.Exception.Message)"
+            if ($_.Exception.Response) {
+                $errorContent = $_.Exception.Response.Content.ReadAsStringAsync().Result
+                Write-Error "Error details: $errorContent"
+            }
+            return $null
+        }
+    }
+    catch {
+        Write-Error "Error creating application $AppName : $($_.Exception.Message)"
+        return $null
+    }
+}
+
 function Set-AutopilotAssignments {
     param(
         [Parameter(Mandatory = $true)]
@@ -1052,6 +1235,63 @@ function Set-LegacyPolicyAssignments {
     }
 }
 
+function Set-AppAssignments {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$AppId,
+        [Parameter(Mandatory = $true)]
+        [string]$AppName,
+        [Parameter(Mandatory = $true)]
+        [string]$AssignmentType
+    )
+    
+    try {
+        Write-Host "Assigning application '$AppName' to $AssignmentType group..." -ForegroundColor Yellow
+        
+        $targetGroupId = if ($AssignmentType -eq "devices") { $Script:AutopilotDevicesGroupId } else { $Script:AutopilotUsersGroupId }
+        
+        if (-not $targetGroupId) {
+            Write-Error "No valid group ID found for $AssignmentType group"
+            return $false
+        }
+        
+        $assignmentBody = @{
+            mobileAppAssignments = @(
+                @{
+                    "@odata.type" = "#microsoft.graph.mobileAppAssignment"
+                    intent = "Required"
+                    target = @{
+                        "@odata.type" = "#microsoft.graph.groupAssignmentTarget"
+                        groupId = $targetGroupId
+                    }
+                }
+            )
+        }
+        
+        $jsonBody = $assignmentBody | ConvertTo-Json -Depth 10
+        
+        $uri = "https://graph.microsoft.com/beta/deviceAppManagement/mobileApps('$AppId')/assign"
+        
+        try {
+            $response = Invoke-MgGraphRequest -Uri $uri -Method POST -Body $jsonBody -ContentType "application/json" -ErrorAction Stop
+            Write-Host "✓ Successfully assigned application '$AppName' to $AssignmentType group" -ForegroundColor Green
+            return $true
+        }
+        catch {
+            Write-Error "Failed to assign application '$AppName': $($_.Exception.Message)"
+            if ($_.Exception.Response) {
+                $errorContent = $_.Exception.Response.Content.ReadAsStringAsync().Result
+                Write-Error "Error details: $errorContent"
+            }
+            return $false
+        }
+    }
+    catch {
+        Write-Error "Failed to assign application '$AppName': $($_.Exception.Message)"
+        return $false
+    }
+}
+
 function Test-AutopilotProfileExists {
     param(
         [Parameter(Mandatory = $true)]
@@ -1113,6 +1353,24 @@ function Test-PolicyExists {
     }
 }
 
+function Test-AppExists {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$AppName
+    )
+    
+    try {
+        $uri = "https://graph.microsoft.com/beta/deviceAppManagement/mobileApps?`$filter=displayName eq '$AppName'"
+        $response = Invoke-MgGraphRequest -Uri $uri -Method GET
+        
+        return ($response.value.Count -gt 0)
+    }
+    catch {
+        Write-Warning "Could not check if application exists: $($_.Exception.Message)"
+        return $false
+    }
+}
+
 function Show-AllProfilesSelectionMenu {
     param(
         [Parameter(Mandatory = $true)]
@@ -1120,10 +1378,12 @@ function Show-AllProfilesSelectionMenu {
         [Parameter(Mandatory = $true)]
         [array]$AutopilotProfiles,
         [Parameter(Mandatory = $true)]
-        [array]$ESPProfiles
+        [array]$ESPProfiles,
+        [Parameter(Mandatory = $true)]
+        [array]$Apps
     )
     
-    Write-Host "=== Available Profiles and Policies ===" -ForegroundColor Cyan
+    Write-Host "=== Available Profiles, Policies, and Applications ===" -ForegroundColor Cyan
     Write-Host ""
     
     $selectedItems = @()
@@ -1132,11 +1392,13 @@ function Show-AllProfilesSelectionMenu {
     $allItems += $ConfigPolicies
     $allItems += $AutopilotProfiles
     $allItems += $ESPProfiles
+    $allItems += $Apps
     
     foreach ($item in $allItems) {
         $itemType = switch ($item.Type) {
             "Autopilot" { " [Autopilot Profile]" }
             "ESP" { " [ESP Profile]" }
+            "App" { " [Application]" }
             default { if ($item.IsManual) { " [OMA-URI Policy]" } else { " [Config Policy]" } }
         }
         
@@ -1377,7 +1639,7 @@ function Show-PolicySelectionMenu {
 # Main execution
 Write-Host ""
 Write-Host "=== Enhanced Intune Configuration Script ===" -ForegroundColor Cyan
-Write-Host "This script will create configuration profiles, Autopilot profiles, and ESP profiles for Intune" -ForegroundColor Cyan
+Write-Host "This script will create configuration profiles, Autopilot profiles, ESP profiles, and applications for Intune" -ForegroundColor Cyan
 Write-Host ""
 
 if (-not (Initialize-ConfigFolders)) {
@@ -1403,8 +1665,9 @@ if (-not (Setup-DynamicGroups)) {
 $configPolicies = Get-ConfigurationPoliciesFromFolder
 $autopilotProfiles = Get-AutopilotProfilesFromFolder
 $espProfiles = Get-ESPProfilesFromFolder
+$apps = Get-AppConfigurationsFromFolder
 
-$totalItems = $configPolicies.Count + $autopilotProfiles.Count + $espProfiles.Count
+$totalItems = $configPolicies.Count + $autopilotProfiles.Count + $espProfiles.Count + $apps.Count
 
 if ($totalItems -eq 0) {
     Write-Host "No valid configuration files were found or loaded." -ForegroundColor Yellow
@@ -1413,7 +1676,7 @@ if ($totalItems -eq 0) {
 
 Write-Host ""
 
-$selectedItems = Show-AllProfilesSelectionMenu -ConfigPolicies $configPolicies -AutopilotProfiles $autopilotProfiles -ESPProfiles $espProfiles
+$selectedItems = Show-AllProfilesSelectionMenu -ConfigPolicies $configPolicies -AutopilotProfiles $autopilotProfiles -ESPProfiles $espProfiles -Apps $apps
 
 if ($selectedItems.Count -eq 0) {
     Write-Host "No items selected. Exiting..." -ForegroundColor Yellow
@@ -1426,6 +1689,7 @@ foreach ($item in $selectedItems) {
     $typeText = switch ($item.Type) {
         "Autopilot" { " (Autopilot Profile)" }
         "ESP" { " (ESP Profile)" }
+        "App" { " (Application)" }
         default { " (Configuration Policy)" }
     }
     Write-Host "- $($item.Name)$typeText" -ForegroundColor Green
@@ -1455,6 +1719,7 @@ foreach ($item in $selectedItems) {
     switch ($item.Type) {
         "Autopilot" { $exists = Test-AutopilotProfileExists -ProfileName $item.Name }
         "ESP" { $exists = Test-ESPProfileExists -ProfileName $item.Name }
+        "App" { $exists = Test-AppExists -AppName $item.Name }
         default { $exists = Test-PolicyExists -PolicyName $item.Name }
     }
     
@@ -1491,6 +1756,9 @@ foreach ($item in $selectedItems) {
         }
         "ESP" {
             $result = New-ESPProfile -ProfileData $item.Data -ProfileName $item.Name
+        }
+        "App" {
+            $result = New-AppFromJson -AppData $item.Data -AppName $item.Name
         }
         "Config" {
             if ($item.IsManual) {
