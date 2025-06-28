@@ -3,7 +3,7 @@
     "assignment": "devices",
     "createdDateTime": "",
     "creationSource": null,
-    "description": "Zorgt ervoor dat Windows Hello volledig word uitgezet",
+    "description": "Zorgt ervoor dat Windows Hello volledig word uitgezet. Bij setup word dan ook niet gevraagd om een pincode in te stellen.",
     "lastModifiedDateTime": "",
     "name": "",
     "platforms": "windows10",

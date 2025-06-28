@@ -507,9 +507,6 @@ function New-AutopilotProfile {
         
         $jsonBody = $autopilotProfileData | ConvertTo-Json -Depth 20
         
-        Write-Host "Autopilot profile payload:" -ForegroundColor Cyan
-        Write-Host $jsonBody -ForegroundColor Gray
-        
         $uri = "https://graph.microsoft.com/beta/deviceManagement/windowsAutopilotDeploymentProfiles"
         
         try {
@@ -606,9 +603,6 @@ function New-ESPProfile {
         }
         
         $jsonBody = $espProfileData | ConvertTo-Json -Depth 20
-        
-        Write-Host "ESP profile payload:" -ForegroundColor Cyan
-        Write-Host $jsonBody -ForegroundColor Gray
         
         $uri = "https://graph.microsoft.com/beta/deviceManagement/deviceEnrollmentConfigurations"
         
@@ -1416,13 +1410,6 @@ if ($totalItems -eq 0) {
     Write-Host "No valid configuration files were found or loaded." -ForegroundColor Yellow
     return
 }
-
-Write-Host "Loaded configuration items:" -ForegroundColor Green
-Write-Host "- Configuration Policies: $($configPolicies.Count)" -ForegroundColor Green
-Write-Host "- Autopilot Profiles: $($autopilotProfiles.Count)" -ForegroundColor Green
-Write-Host "- ESP Profiles: $($espProfiles.Count)" -ForegroundColor Green
-Write-Host "- Total: $totalItems" -ForegroundColor Green
-Write-Host ""
 
 Write-Host ""
 
