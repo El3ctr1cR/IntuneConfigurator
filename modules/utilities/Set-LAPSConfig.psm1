@@ -1,4 +1,4 @@
-function Enable-LAPSInEntraID {
+﻿function Enable-LAPSInEntraID {
     try {
         Write-Host "Enabling LAPS in Entra ID..." -ForegroundColor Yellow
         

@@ -1,4 +1,4 @@
-function Get-TenantId {
+﻿function Get-TenantId {
     try {
         $uri = "https://graph.microsoft.com/v1.0/organization"
         $response = Invoke-MgGraphRequest -Uri $uri -Method GET -ErrorAction Stop

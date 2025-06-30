@@ -1,4 +1,4 @@
-function Test-AutopilotProfileExists {
+﻿function Test-AutopilotProfileExists {
     param(
         [Parameter(Mandatory = $true)]
         [string]$ProfileName

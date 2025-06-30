@@ -1,4 +1,4 @@
-function Set-LegacyPolicyAssignments {
+﻿function Set-LegacyPolicyAssignments {
     param(
         [Parameter(Mandatory = $true)]
         [string]$PolicyId,

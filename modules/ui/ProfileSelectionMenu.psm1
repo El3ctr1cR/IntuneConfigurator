@@ -1,4 +1,4 @@
-function Show-AllProfilesSelectionMenu {
+﻿function Show-AllProfilesSelectionMenu {
     param(
         [Parameter(Mandatory = $true)]
         [array]$ConfigPolicies,

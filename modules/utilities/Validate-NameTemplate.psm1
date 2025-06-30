@@ -1,4 +1,4 @@
-function Test-DeviceNameTemplate {
+﻿function Test-DeviceNameTemplate {
     param(
         [Parameter(Mandatory = $true)]
         [string]$Template

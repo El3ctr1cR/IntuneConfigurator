@@ -1,4 +1,4 @@
-function Set-PolicyAssignments {
+﻿function Set-PolicyAssignments {
     param(
         [Parameter(Mandatory = $true)]
         [string]$PolicyId,

@@ -1,4 +1,4 @@
-function Get-AppConfigurationsFromFolder {
+﻿function Get-AppConfigurationsFromFolder {
     param (
         [Parameter(Mandatory = $true)]
         [string]$AppsFolderPath,

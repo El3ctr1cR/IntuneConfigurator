@@ -1,4 +1,4 @@
-$GraphScopes = @(
+﻿$GraphScopes = @(
     "DeviceManagementConfiguration.ReadWrite.All",
     "DeviceManagementApps.ReadWrite.All",
     "Group.ReadWrite.All",

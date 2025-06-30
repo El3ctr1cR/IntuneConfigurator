@@ -1,4 +1,4 @@
-function Get-ConfigurationPaths {
+﻿function Get-ConfigurationPaths {
     param(
         [Parameter(Mandatory = $true)]
         [string]$RootPath

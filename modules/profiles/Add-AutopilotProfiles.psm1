@@ -1,4 +1,4 @@
-function Get-AutopilotProfilesFromFolder {
+﻿function Get-AutopilotProfilesFromFolder {
     param (
         [string]$AutopilotFolderPath,
         [Parameter(Mandatory = $true)]

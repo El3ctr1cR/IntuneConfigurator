@@ -1,4 +1,4 @@
-function Set-AppAssignments {
+﻿function Set-AppAssignments {
     param(
         [Parameter(Mandatory = $true)]
         [string]$AppId,

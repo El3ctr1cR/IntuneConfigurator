@@ -1,4 +1,4 @@
-function Remove-ReadOnlyProperties {
+﻿function Remove-ReadOnlyProperties {
     param(
         [Parameter(Mandatory = $true)]
         [PSCustomObject]$JsonObject

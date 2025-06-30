@@ -1,4 +1,4 @@
-function Get-ESPProfilesFromFolder {
+﻿function Get-ESPProfilesFromFolder {
     param (
         [Parameter(Mandatory = $true)]
         [string]$ESPFolderPath,

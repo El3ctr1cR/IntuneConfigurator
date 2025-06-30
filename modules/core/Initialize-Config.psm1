@@ -1,4 +1,4 @@
-function Initialize-ConfigFolders {
+﻿function Initialize-ConfigFolders {
     param (
         [string]$ConfigFolderPath,
         [string]$AutopilotFolderPath,

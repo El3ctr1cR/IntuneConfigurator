@@ -1,4 +1,4 @@
-function Set-ESPAssignments {
+﻿function Set-ESPAssignments {
     param(
         [Parameter(Mandatory = $true)]
         [string]$ProfileId,

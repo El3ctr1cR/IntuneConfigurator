@@ -1,4 +1,4 @@
-function Get-AllProfiles {
+﻿function Get-AllProfiles {
     param(
         [Parameter(Mandatory = $true)]
         [string]$ConfigFolderPath,

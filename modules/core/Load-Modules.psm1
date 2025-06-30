@@ -1,4 +1,4 @@
-$Modules = @(
+﻿$Modules = @(
     @{Name = "Microsoft.Graph.Authentication"; MinVersion = "1.0.0" },
     @{Name = "Microsoft.Graph.DeviceManagement"; MinVersion = "1.0.0" },
     @{Name = "Microsoft.Graph.Identity.SignIns"; MinVersion = "1.0.0" },

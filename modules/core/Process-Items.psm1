@@ -1,4 +1,4 @@
-function Invoke-SelectedItems {
+﻿function Invoke-SelectedItems {
     param(
         [Parameter(Mandatory = $true)]
         [array]$SelectedItems,

@@ -1,4 +1,4 @@
-function Request-EdgeSyncConfiguration {
+﻿function Request-EdgeSyncConfiguration {
     param(
         [Parameter(Mandatory = $true)]
         [string]$PolicyName

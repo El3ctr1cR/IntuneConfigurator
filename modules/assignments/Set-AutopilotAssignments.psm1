@@ -1,4 +1,4 @@
-function Set-AutopilotAssignments {
+﻿function Set-AutopilotAssignments {
     param(
         [Parameter(Mandatory = $true)]
         [string]$ProfileId,

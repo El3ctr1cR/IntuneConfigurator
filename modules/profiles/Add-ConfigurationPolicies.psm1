@@ -1,4 +1,4 @@
-function Get-ConfigurationPoliciesFromFolder {
+﻿function Get-ConfigurationPoliciesFromFolder {
     param (
         [Parameter(Mandatory = $true)]
         [string]$ConfigFolderPath
