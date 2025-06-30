@@ -27,9 +27,6 @@ $AutopilotFolderPath = Join-Path $PSScriptRoot "autopilot"
 $ESPFolderPath = Join-Path $PSScriptRoot "esp"
 $AppsFolderPath = Join-Path $PSScriptRoot "apps"
 
-$Script:AutopilotDevicesGroupId = $null
-$Script:AutopilotUsersGroupId = $null
-
 foreach ($module in $Modules) {
     if (!(Get-Module -ListAvailable -Name $module.Name | Where-Object { [version]$_.Version -ge [version]$module.MinVersion })) {
         try {
@@ -78,108 +75,10 @@ function Initialize-ConfigFolders {
         Write-Host "  - $ConfigFolderPath (for configuration policies)" -ForegroundColor Yellow
         Write-Host "  - $AutopilotFolderPath (for autopilot profiles)" -ForegroundColor Yellow
         Write-Host "  - $ESPFolderPath (for enrollment status page profiles)" -ForegroundColor Yellow
-        Write-Host "  - $AppsFolderPath (for applications)" -ForegroundColor Yellow  # Added
+        Write-Host "  - $AppsFolderPath (for applications)" -ForegroundColor Yellow
         return $false
     }
     
-    return $true
-}
-
-function New-DynamicGroup {
-    param(
-        [Parameter(Mandatory = $true)]
-        [string]$GroupName,
-        [Parameter(Mandatory = $true)]
-        [string]$DynamicRule,
-        [Parameter(Mandatory = $true)]
-        [string]$GroupType
-    )
-    
-    try {
-        Write-Host "Creating $GroupType group: $GroupName..." -ForegroundColor Yellow
-        
-        $groupBody = @{
-            displayName = $GroupName
-            description = "Dynamic $GroupType group for Intune assignments"
-            groupTypes = @("DynamicMembership")
-            securityEnabled = $true
-            mailEnabled = $false
-            mailNickname = ($GroupName -replace "\s|-", "").ToLower()
-            membershipRule = $DynamicRule
-            membershipRuleProcessingState = "On"
-        }
-        
-        if ($GroupType -eq "Devices") {
-            $groupBody["@odata.type"] = "#microsoft.graph.group"
-        }
-        
-        $jsonBody = $groupBody | ConvertTo-Json -Depth 10
-        
-        $uri = "https://graph.microsoft.com/v1.0/groups"
-        
-        $response = Invoke-MgGraphRequest -Uri $uri -Method POST -Body $jsonBody -ContentType "application/json" -ErrorAction Stop
-        
-        if ($response.id) {
-            Write-Host "Successfully created $GroupType group: $GroupName (ID: $($response.id))" -ForegroundColor Green
-            return $response.id
-        }
-        else {
-            Write-Error "Failed to create $GroupType group: $GroupName - No ID returned"
-            return $null
-        }
-    }
-    catch {
-        Write-Error "Failed to create $GroupType group '$GroupName': $($_.Exception.Message)"
-        return $null
-    }
-}
-
-function Setup-DynamicGroups {
-    Write-Host "=== Setting up required dynamic groups ===" -ForegroundColor Cyan
-    Write-Host ""
-    
-    # Device group
-    $devicesGroupName = "VWC BL - Autopilot devices"
-    $devicesRule = '(device.devicePhysicalIDs -any (_ -startsWith "[ZTDId]"))'
-    
-    Write-Host "Checking for device group: $devicesGroupName..." -ForegroundColor Yellow
-    $uri = "https://graph.microsoft.com/v1.0/groups?`$filter=displayName eq '$devicesGroupName'"
-    $response = Invoke-MgGraphRequest -Uri $uri -Method GET -ErrorAction SilentlyContinue
-    
-    if ($response.value.Count -gt 0) {
-        $Script:AutopilotDevicesGroupId = $response.value[0].id
-        Write-Host "Found existing device group: $devicesGroupName (ID: $Script:AutopilotDevicesGroupId)" -ForegroundColor Green
-    }
-    else {
-        $Script:AutopilotDevicesGroupId = New-DynamicGroup -GroupName $devicesGroupName -DynamicRule $devicesRule -GroupType "Devices"
-        if (-not $Script:AutopilotDevicesGroupId) {
-            Write-Error "Failed to create device group. Cannot proceed."
-            return $false
-        }
-    }
-    
-    # User group
-    $usersGroupName = "VWC BL - Autopilot users"
-    $usersRule = 'user.assignedPlans -any (assignedPlan.servicePlanId -eq "c1ec4a95-1f05-45b3-a911-aa3fa01094f5" -and assignedPlan.capabilityStatus -eq "Enabled")'
-    
-    Write-Host "Checking for user group: $usersGroupName..." -ForegroundColor Yellow
-    $uri = "https://graph.microsoft.com/v1.0/groups?`$filter=displayName eq '$usersGroupName'"
-    $response = Invoke-MgGraphRequest -Uri $uri -Method GET -ErrorAction SilentlyContinue
-    
-    if ($response.value.Count -gt 0) {
-        $Script:AutopilotUsersGroupId = $response.value[0].id
-        Write-Host "Found existing user group: $usersGroupName (ID: $Script:AutopilotUsersGroupId)" -ForegroundColor Green
-    }
-    else {
-        $Script:AutopilotUsersGroupId = New-DynamicGroup -GroupName $usersGroupName -DynamicRule $usersRule -GroupType "Users"
-        if (-not $Script:AutopilotUsersGroupId) {
-            Write-Error "Failed to create user group. Cannot proceed."
-            return $false
-        }
-    }
-    
-    Write-Host "Dynamic groups setup completed successfully" -ForegroundColor Green
-    Write-Host ""
     return $true
 }
 
@@ -342,7 +241,7 @@ function Get-AutopilotProfilesFromFolder {
                 $profileData = $jsonContent | ConvertFrom-Json -ErrorAction Stop
                 
                 $baseName = [System.IO.Path]::GetFileNameWithoutExtension($file.Name)
-                $profileName = "VWC BL $baseName" # No dash for Autopilot
+                $profileName = "VWC BL $baseName"
                 
                 $profile = @{
                     Name = $profileName
@@ -457,13 +356,6 @@ function Validate-DeviceNameTemplate {
         [Parameter(Mandatory = $true)]
         [string]$Template
     )
-    
-    # Rules:
-    # - 15 characters or less (after macro expansion, we'll check raw length)
-    # - Letters (a-z, A-Z), numbers (0-9), hyphens only
-    # - No spaces
-    # - Not only numbers
-    # - Can include %SERIAL% or %RAND:x%
     
     if ($Template.Length -gt 15) {
         Write-Error "Device name template must be 15 characters or less (current length: $($Template.Length))."
@@ -850,7 +742,6 @@ function New-AppFromJson {
             description = "🛡️ Dit is een standaard VWC Baseline application"
         }
         
-        # Common properties for all app types
         $commonProperties = @(
             'publisher',
             'isFeatured',
@@ -869,7 +760,6 @@ function New-AppFromJson {
             }
         }
         
-        # Microsoft 365 app-specific properties
         if ($odataType -eq "#microsoft.graph.officeSuiteApp") {
             $officeProperties = @(
                 'autoAcceptEula',
@@ -893,7 +783,6 @@ function New-AppFromJson {
                 }
             }
         }
-        # WinGet app-specific properties
         elseif ($odataType -eq "#microsoft.graph.winGetApp") {
             $winGetProperties = @(
                 'packageIdentifier',
@@ -934,7 +823,6 @@ function New-AppFromJson {
             if ($response.id) {
                 Write-Host "Successfully created application: $AppName (ID: $($response.id))" -ForegroundColor Green
                 
-                # Use the Assignment property from the item object
                 $assignmentType = $item.Assignment
                 if (-not $assignmentType) {
                     Write-Warning "No assignment type specified for $AppName. Defaulting to devices."
@@ -980,98 +868,36 @@ function Set-AutopilotAssignments {
     )
     
     try {
-        Write-Host "Assigning Autopilot profile '$ProfileName' to $AssignmentType group..." -ForegroundColor Yellow
+        Write-Host "Assigning Autopilot profile '$ProfileName' to $AssignmentType..." -ForegroundColor Yellow
         
-        $targetGroupId = if ($AssignmentType -eq "devices") { $Script:AutopilotDevicesGroupId } else { $Script:AutopilotUsersGroupId }
-        
-        if (-not $targetGroupId) {
-            Write-Error "No valid group ID found for $AssignmentType group"
-            return $false
+        $odataType = if ($AssignmentType -eq "devices") { 
+            "#microsoft.graph.allDevicesAssignmentTarget"
+        } else { 
+            "#microsoft.graph.allLicensedUsersAssignmentTarget"
         }
         
-        # Method 1: Try the direct assignment endpoint first
         $assignmentBody = @{
             target = @{
-                "@odata.type" = "#microsoft.graph.groupAssignmentTarget"
-                groupId = $targetGroupId
+                "@odata.type" = $odataType
             }
         }
         
         $jsonBody = $assignmentBody | ConvertTo-Json -Depth 10
         
-        # Use the correct API endpoint for Autopilot assignments
         $uri = "https://graph.microsoft.com/beta/deviceManagement/windowsAutopilotDeploymentProfiles/$ProfileId/assignments"
         
         try {
-            # First try POST to assignments endpoint
             $response = Invoke-MgGraphRequest -Uri $uri -Method POST -Body $jsonBody -ContentType "application/json" -ErrorAction Stop
-            Write-Host "✓ Successfully assigned Autopilot profile '$ProfileName' to $AssignmentType group" -ForegroundColor Green
+            Write-Host "✓ Successfully assigned Autopilot profile '$ProfileName' to $AssignmentType" -ForegroundColor Green
             return $true
         }
         catch {
-            Write-Host "Direct assignment failed, trying bulk assignment method..." -ForegroundColor Yellow
-            
-            # Method 2: Try the bulk assignment method
-            $bulkAssignmentBody = @{
-                assignments = @(
-                    @{
-                        target = @{
-                            "@odata.type" = "#microsoft.graph.groupAssignmentTarget"
-                            groupId = $targetGroupId
-                        }
-                    }
-                )
+            Write-Error "Failed to assign Autopilot profile '$ProfileName': $($_.Exception.Message)"
+            if ($_.Exception.Response) {
+                $errorContent = $_.Exception.Response.Content.ReadAsStringAsync().Result
+                Write-Error "Error details: $errorContent"
             }
-            
-            $bulkJsonBody = $bulkAssignmentBody | ConvertTo-Json -Depth 10
-            $bulkUri = "https://graph.microsoft.com/beta/deviceManagement/windowsAutopilotDeploymentProfiles/$ProfileId/assign"
-            
-            try {
-                $response = Invoke-MgGraphRequest -Uri $bulkUri -Method POST -Body $bulkJsonBody -ContentType "application/json" -ErrorAction Stop
-                Write-Host "✓ Successfully assigned Autopilot profile '$ProfileName' to $AssignmentType group" -ForegroundColor Green
-                return $true
-            }
-            catch {
-                Write-Host "Bulk assignment also failed, trying PATCH method..." -ForegroundColor Yellow
-                
-                # Method 3: Try PATCH method to update the profile with assignments
-                try {
-                    # First get the current profile
-                    $currentProfileUri = "https://graph.microsoft.com/beta/deviceManagement/windowsAutopilotDeploymentProfiles/$ProfileId"
-                    $currentProfile = Invoke-MgGraphRequest -Uri $currentProfileUri -Method GET -ErrorAction Stop
-                    
-                    # Add assignments to the profile
-                    $currentProfile.assignments = @(
-                        @{
-                            target = @{
-                                "@odata.type" = "#microsoft.graph.groupAssignmentTarget"
-                                groupId = $targetGroupId
-                            }
-                        }
-                    )
-                    
-                    $patchBody = @{
-                        assignments = $currentProfile.assignments
-                    } | ConvertTo-Json -Depth 10
-                    
-                    $response = Invoke-MgGraphRequest -Uri $currentProfileUri -Method PATCH -Body $patchBody -ContentType "application/json" -ErrorAction Stop
-                    Write-Host "✓ Successfully assigned Autopilot profile '$ProfileName' to $AssignmentType group using PATCH" -ForegroundColor Green
-                    return $true
-                }
-                catch {
-                    Write-Error "All assignment methods failed for Autopilot profile '$ProfileName': $($_.Exception.Message)"
-                    if ($_.Exception.Response) {
-                        try {
-                            $errorContent = $_.Exception.Response.Content.ReadAsStringAsync().Result
-                            Write-Error "Error details: $errorContent"
-                        }
-                        catch {
-                            Write-Error "Could not read error response content"
-                        }
-                    }
-                    return $false
-                }
-            }
+            return $false
         }
     }
     catch {
@@ -1091,21 +917,19 @@ function Set-ESPAssignments {
     )
     
     try {
-        Write-Host "Assigning ESP profile '$ProfileName' to $AssignmentType group..." -ForegroundColor Yellow
+        Write-Host "Assigning ESP profile '$ProfileName' to $AssignmentType..." -ForegroundColor Yellow
         
-        $targetGroupId = if ($AssignmentType -eq "devices") { $Script:AutopilotDevicesGroupId } else { $Script:AutopilotUsersGroupId }
-        
-        if (-not $targetGroupId) {
-            Write-Error "No valid group ID found for $AssignmentType group"
-            return $false
+        $odataType = if ($AssignmentType -eq "devices") { 
+            "#microsoft.graph.allDevicesAssignmentTarget"
+        } else { 
+            "#microsoft.graph.allLicensedUsersAssignmentTarget"
         }
         
         $assignmentBody = @{
             enrollmentConfigurationAssignments = @(
                 @{
                     target = @{
-                        "@odata.type" = "#microsoft.graph.groupAssignmentTarget"
-                        groupId = $targetGroupId
+                        "@odata.type" = $odataType
                     }
                 }
             )
@@ -1117,7 +941,7 @@ function Set-ESPAssignments {
         
         try {
             $response = Invoke-MgGraphRequest -Uri $uri -Method POST -Body $jsonBody -ContentType "application/json" -ErrorAction Stop
-            Write-Host "✓ Successfully assigned ESP profile '$ProfileName' to $AssignmentType group" -ForegroundColor Green
+            Write-Host "✓ Successfully assigned ESP profile '$ProfileName' to $AssignmentType" -ForegroundColor Green
             return $true
         }
         catch {
@@ -1146,13 +970,12 @@ function Set-PolicyAssignments {
     )
     
     try {
-        Write-Host "Assigning policy '$PolicyName' to $AssignmentType group..." -ForegroundColor Yellow
+        Write-Host "Assigning policy '$PolicyName' to $AssignmentType..." -ForegroundColor Yellow
         
-        $targetGroupId = if ($AssignmentType -eq "devices") { $Script:AutopilotDevicesGroupId } else { $Script:AutopilotUsersGroupId }
-        
-        if (-not $targetGroupId) {
-            Write-Error "No valid group ID found for $AssignmentType group"
-            return $false
+        $odataType = if ($AssignmentType -eq "devices") { 
+            "#microsoft.graph.allDevicesAssignmentTarget"
+        } else { 
+            "#microsoft.graph.allLicensedUsersAssignmentTarget"
         }
         
         $assignmentBody = @{
@@ -1160,8 +983,7 @@ function Set-PolicyAssignments {
                 @{
                     id = ""
                     target = @{
-                        "@odata.type" = "#microsoft.graph.groupAssignmentTarget"
-                        groupId = $targetGroupId
+                        "@odata.type" = $odataType
                     }
                 }
             )
@@ -1173,7 +995,7 @@ function Set-PolicyAssignments {
         
         try {
             $response = Invoke-MgGraphRequest -Uri $uri -Method POST -Body $jsonBody -ContentType "application/json" -ErrorAction Stop
-            Write-Host "✓ Successfully assigned policy '$PolicyName' to $AssignmentType group" -ForegroundColor Green
+            Write-Host "✓ Successfully assigned policy '$PolicyName' to $AssignmentType" -ForegroundColor Green
             return $true
         }
         catch {
@@ -1198,19 +1020,20 @@ function Set-LegacyPolicyAssignments {
     )
     
     try {
-        Write-Host "Assigning legacy policy '$PolicyName' to $AssignmentType group..." -ForegroundColor Yellow
+        Write-Host "Assigning legacy policy '$PolicyName' to $AssignmentType..." -ForegroundColor Yellow
         
-        $targetGroupId = if ($AssignmentType -eq "devices") { $Script:AutopilotDevicesGroupId } else { $Script:AutopilotUsersGroupId }
-        
-        if (-not $targetGroupId) {
-            Write-Error "No valid group ID found for $AssignmentType group"
-            return $false
+        $odataType = if ($AssignmentType -eq "devices") { 
+            "#microsoft.graph.allDevicesAssignmentTarget"
+        } else { 
+            "#microsoft.graph.allLicensedUsersAssignmentTarget"
         }
         
         $assignmentBody = @{
-            deviceConfigurationGroupAssignments = @(
+            assignments = @(
                 @{
-                    targetGroupId = $targetGroupId
+                    target = @{
+                        "@odata.type" = $odataType
+                    }
                 }
             )
         }
@@ -1221,11 +1044,15 @@ function Set-LegacyPolicyAssignments {
         
         try {
             $response = Invoke-MgGraphRequest -Uri $uri -Method POST -Body $jsonBody -ContentType "application/json" -ErrorAction Stop
-            Write-Host "✓ Successfully assigned legacy policy '$PolicyName' to $AssignmentType group" -ForegroundColor Green
+            Write-Host "✓ Successfully assigned legacy policy '$PolicyName' to $AssignmentType" -ForegroundColor Green
             return $true
         }
         catch {
             Write-Error "Failed to assign legacy policy '$PolicyName': $($_.Exception.Message)"
+            if ($_.Exception.Response) {
+                $errorContent = $_.Exception.Response.Content.ReadAsStringAsync().Result
+                Write-Error "Error details: $errorContent"
+            }
             return $false
         }
     }
@@ -1246,13 +1073,12 @@ function Set-AppAssignments {
     )
     
     try {
-        Write-Host "Assigning application '$AppName' to $AssignmentType group..." -ForegroundColor Yellow
+        Write-Host "Assigning application '$AppName' to $AssignmentType..." -ForegroundColor Yellow
         
-        $targetGroupId = if ($AssignmentType -eq "devices") { $Script:AutopilotDevicesGroupId } else { $Script:AutopilotUsersGroupId }
-        
-        if (-not $targetGroupId) {
-            Write-Error "No valid group ID found for $AssignmentType group"
-            return $false
+        $odataType = if ($AssignmentType -eq "devices") { 
+            "#microsoft.graph.allDevicesAssignmentTarget"
+        } else { 
+            "#microsoft.graph.allLicensedUsersAssignmentTarget"
         }
         
         $assignmentBody = @{
@@ -1261,8 +1087,7 @@ function Set-AppAssignments {
                     "@odata.type" = "#microsoft.graph.mobileAppAssignment"
                     intent = "Required"
                     target = @{
-                        "@odata.type" = "#microsoft.graph.groupAssignmentTarget"
-                        groupId = $targetGroupId
+                        "@odata.type" = $odataType
                     }
                 }
             )
@@ -1274,7 +1099,7 @@ function Set-AppAssignments {
         
         try {
             $response = Invoke-MgGraphRequest -Uri $uri -Method POST -Body $jsonBody -ContentType "application/json" -ErrorAction Stop
-            Write-Host "✓ Successfully assigned application '$AppName' to $AssignmentType group" -ForegroundColor Green
+            Write-Host "✓ Successfully assigned application '$AppName' to $AssignmentType" -ForegroundColor Green
             return $true
         }
         catch {
@@ -1652,12 +1477,6 @@ Write-Host ""
 # Connect to MS Graph
 if (-not (Connect-ToMSGraph)) {
     Write-Error "Cannot proceed without Microsoft Graph connection"
-    return
-}
-
-# Setup dynamic groups
-if (-not (Setup-DynamicGroups)) {
-    Write-Error "Cannot proceed without dynamic groups setup"
     return
 }
 
