@@ -1,15 +1,11 @@
 ﻿# Main.ps1
 # Import modules
+Clear-Host
+$version = "v0.1.0"
 $modulePaths = Get-ChildItem -Path (Join-Path $PSScriptRoot "modules") -Recurse -Include *.psm1
 foreach ($module in $modulePaths) {
     Import-Module $module.FullName -Force
 }
-
-# Main execution
-Write-Host ""
-Write-Host "=== Enhanced Intune Configuration Script ===" -ForegroundColor Cyan
-Write-Host "This script will create configuration profiles, Autopilot profiles, ESP profiles, and applications for Intune" -ForegroundColor Cyan
-Write-Host ""
 
 # Get configuration paths
 $paths = Get-ConfigurationPaths -RootPath $PSScriptRoot
@@ -27,6 +23,30 @@ if (-not (Install-RequiredModules) -or -not (Import-RequiredModules)) {
     Write-Error "Cannot proceed without required modules"
     return
 }
+
+Clear-Host
+
+Write-Host "
+ ___       _                                                
+|_ _|_ __ | |_ _   _ _ __   ___                             
+ | || '_ \| __| | | | '_ \ / _ \                            
+ | || | | | |_| |_| | | | |  __/                            
+|___|_| |_|\__|\__,_|_| |_|\___|              _             
+ / ___|___  _ __  / _(_) __ _ _   _ _ __ __ _| |_ ___  _ __ 
+| |   / _ \| '_ \| |_| |/ _  | | | | '__/ _  | __/ _ \| '__|
+| |__| (_) | | | |  _| | (_| | |_| | | | (_| | || (_) | |   
+ \____\___/|_| |_|_| |_|\__, |\__,_|_|  \__,_|\__\___/|_|   
+                        |___/                               " -ForegroundColor DarkMagenta
+Write-Host "Fully automates your Intune configuration based on your preferences." -ForegroundColor Gray
+Write-Host "Created by El3ctr1cR" -ForegroundColor Gray
+Write-Host "[$version] https://github.com/El3ctr1cR/IntuneConfigurator" -ForegroundColor Gray
+
+
+# ─── Wait ───────────────────────────────────────────────────────────────────
+Write-Host ""
+Read-Host -Prompt "Press Enter to login and begin configuration"
+Clear-Host
+
 
 # Connect to Microsoft Graph
 if (-not (Connect-ToMSGraph)) {
@@ -59,6 +79,8 @@ if ($selectedItems.Count -eq 0) {
     Write-Host "No items selected. Exiting..." -ForegroundColor Yellow
     return
 }
+
+Clear-Host
 
 Write-Host ""
 Write-Host "=== Selected Items ===" -ForegroundColor Cyan
@@ -114,6 +136,9 @@ Invoke-SelectedItems -SelectedItems $selectedItems `
     -UpdateTenantIdInChildren $updateTenantIdInChildren `
     -EnableLAPSInEntraID $enableLAPSInEntraID `
     -RequestEdgeSyncConfiguration $requestEdgeSyncConfiguration
+
+Write-Host ""
+Read-Host -Prompt "Press Enter to close the script..."
 
 try {
     Disconnect-MgGraph -ErrorAction SilentlyContinue

@@ -14,9 +14,9 @@
     Write-Host ""
     Write-Host "2. Enable 'Users may sync settings and app data across devices' in Enterprise State Roaming" -ForegroundColor Cyan
     Write-Host ""
-    Write-Host "3. Press any key here to continue after completing the above steps..." -ForegroundColor Yellow
+    Write-Host "3. Press Enter to continue after completing the above steps..." -ForegroundColor Yellow
     
-    $null = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")
+    $null = Read-Host
     Write-Host ""
     Write-Host "✓ Continuing with policy creation..." -ForegroundColor Green
     Write-Host ""
