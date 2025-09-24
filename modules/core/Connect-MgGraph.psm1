@@ -14,15 +14,12 @@
 
 function Connect-ToMSGraph {
     try {
+        Disconnect-MgGraph -ErrorAction SilentlyContinue
         Write-Host "Connecting to Microsoft Graph..." -ForegroundColor Yellow
-        
-        $context = Get-MgContext
-        if ($context -and $context.Scopes -and ($GraphScopes | ForEach-Object { $_ -in $context.Scopes }) -eq $true) {
-            Write-Host "Already connected to Microsoft Graph with required scopes" -ForegroundColor Green
-            return $true
-        }
-        
-        Connect-MgGraph -Scopes $GraphScopes -NoWelcome -ErrorAction Stop
+
+        # Force interactive login, no cached session persistence
+        Connect-MgGraph -Scopes $GraphScopes -NoWelcome -ContextScope Process -ErrorAction Stop
+
         Write-Host "Successfully connected to Microsoft Graph" -ForegroundColor Green
         return $true
     }
