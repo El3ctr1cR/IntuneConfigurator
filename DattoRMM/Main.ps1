@@ -80,23 +80,6 @@ Invoke-IntuneDeploy -IntuneWinFilePath $intuneWinFile `
                     -AgentFileName $agentFileName `
                     -AgentFilePath $agentFile
 
-# Cleanup
-$pathsToRemove = @(
-    $buildPath,
-    (Join-Path $PSScriptRoot "tools")
-)
-
-foreach ($path in $pathsToRemove) {
-    if (Test-Path $path) {
-        try {
-            Remove-Item -Path $path -Recurse -Force -ErrorAction Stop
-        }
-        catch {
-            # Ignore removal errors
-        }
-    }
-}
-
 Write-Host ""
 Read-Host -Prompt "Press Enter to close the script..."
 
