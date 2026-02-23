@@ -177,8 +177,8 @@ function Invoke-DuoDeploy {
     $LOBType      = "microsoft.graph.win32LobApp"
     $appName      = "Duo Security"
     $publisher    = "DUO Security Inc."
-    $installCmd   = "`"$InstallerFileName`" /S /V`"/qn IKEY=`"$($DuoConfig.IKEY)`" SKEY=`"$($DuoConfig.SKEY)`" HOST=`"$($DuoConfig.HOST)`" AUTOPUSH=`"#1`" UAC_PROTECTMODE=`"#2`" USERNAMEFORMAT=`"#2`" FAILOPEN=`"#0`" SMARTCARD=`"#0`" ENABLEOFFLINE=`"#1`" RDPONLY=`"#0`"`""
-    $uninstallCmd = "`"$InstallerFileName`" /x /s /v/qn"
+    $installCmd   = "$InstallerFileName /S /V`"/qn IKEY=`"$($DuoConfig.IKEY)`" SKEY=`"$($DuoConfig.SKEY)`" HOST=`"$($DuoConfig.HOST)`" AUTOPUSH=`"#1`" UAC_PROTECTMODE=`"#0`" USERNAMEFORMAT=`"#2`" FAILOPEN=`"#0`" SMARTCARD=`"#0`" ENABLEOFFLINE=`"#1`" RDPONLY=`"#0`"`""
+    $uninstallCmd = "$InstallerFileName /x /s /v/qn"
     $description  = "Duo Security Windows Logon - deployed via IntuneConfigurator"
     $baseUri      = "https://graph.microsoft.com/beta/deviceAppManagement"
 
