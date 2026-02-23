@@ -8,14 +8,11 @@ foreach ($module in $modulePaths) {
     Import-Module $module.FullName -Force
 }
 
-# Prerequisites
-
 if (-not (Install-RequiredModules) -or -not (Import-RequiredModules)) {
     Write-Error "Cannot proceed without required modules"
     return
 }
 
-# IntuneWinAppUtil check
 if (-not (Assert-IntuneWinAppUtil -RootPath $PSScriptRoot)) {
     Write-Error "Cannot proceed without IntuneWinAppUtil"
     return

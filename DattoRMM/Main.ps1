@@ -20,19 +20,6 @@ if (-not (Assert-IntuneWinAppUtil -RootPath $PSScriptRoot)) {
 
 Clear-Host
 
-Write-Host "
- ____        _   _          ____  __  __ __  __ 
-|  _ \  __ _| |_| |_ ___   |  _ \|  \/  |  \/  |
-| | | |/ _  | __| __/ _ \  | |_) | |\/| | |\/| |
-| |_| | (_| | |_| || (_) | |  _ <| |  | | |  | |
-|____/ \__,_|\__|\__\___/  |_| \_\_|  |_|_|  |_|
-                                                  
- ___       _                    ____             
-|_ _|_ __ | |_ _   _ _ __   ___|  _ \  ___ _ __ 
- | || '_ \| __| | | | '_ \ / _ \ | | |/ _ \ '_ \
- | || | | | |_| |_| | | | |  __/ |_| |  __/ |_) |
-|___|_| |_|\__|\__,_|_| |_|\___|____/ \___| .__/ 
-                                           |_|   " -ForegroundColor DarkMagenta
 Write-Host "Easily deploy Datto RMM to your Intune environment as a Win32 app." -ForegroundColor Gray
 Write-Host "Created by El3ctr1cR" -ForegroundColor Gray
 Write-Host "[$version] https://github.com/El3ctr1cR/IntuneConfigurator" -ForegroundColor Gray
