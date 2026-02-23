@@ -1,25 +1,19 @@
 # IntuneConfigurator
 
-**IntuneConfigurator** is a PowerShell-based automation tool designed to simplify and accelerate the deployment of Microsoft Intune configuration. With a single script execution, you can automatically create baseline configuration profiles for your Intune environment — with much more planned in the near future.
+**IntuneConfigurator** is a PowerShell-based automation toolkit for Microsoft Intune. Run the executable and pick a tool — everything is handled automatically.
 
-## 🚀 What It Does (Current Features)
+## 🛠️ Tools
 
-The script currently supports:
-
-- ✅ Automated creation of **baseline configuration profiles** (Device restrictions, Password policies, etc.)
-- ✅ Seamless integration with Microsoft Graph API via authentication
-
-> 💡 Great for IT admins who want to streamline Intune setup in lab, dev, or production environments.
-
----
+| Tool | Description |
+|------|-------------|
+| **Baseline** | Automatically creates baseline Intune configuration profiles (device restrictions, password policies, etc.) |
+| **Datto RMM** | Packages and deploys the Datto RMM agent to Intune as a Win32 app |
+| **Duo Security** | Packages and deploys Duo Security Windows Logon to Intune, including a Proactive Remediation to enforce the required registry key |
 
 ## 🚀 Getting Started
 
-The easiest way to get started:
-
 1. [Download](https://github.com/El3ctr1cR/IntuneConfigurator/releases/latest/download/IntuneConfigurator.exe) the latest version of the executable.
-2. Run the executable.
+2. Run the executable as **Administrator**.
+3. Select the tool you want to run from the menu.
 
-That’s it! Just execute the .exe — everything will be set up for you automatically.
-
-> 🛠️ Ensure you have the necessary permissions and access to the Microsoft 365 tenant before running the tool.
+> Ensure you have the necessary admin permissions on your Microsoft 365 tenant before running.
