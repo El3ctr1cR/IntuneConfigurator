@@ -7,10 +7,9 @@ foreach ($module in $modulePaths) {
     Import-Module $module.FullName -Force
 }
 
-# Get configuration paths
+# Initialize configuration folders
 $paths = Get-ConfigurationPaths -RootPath $PSScriptRoot
 
-# Initialize configuration folders
 if (-not (Initialize-ConfigFolders -ConfigFolderPath $paths.ConfigFolderPath -AutopilotFolderPath $paths.AutopilotFolderPath -ESPFolderPath $paths.ESPFolderPath -AppsFolderPath $paths.AppsFolderPath)) {
     Write-Error "Cannot proceed without configuration files"
     return
@@ -26,23 +25,10 @@ if (-not (Install-RequiredModules) -or -not (Import-RequiredModules)) {
 
 Clear-Host
 
-Write-Host "
- ___       _                                                
-|_ _|_ __ | |_ _   _ _ __   ___                             
- | || '_ \| __| | | | '_ \ / _ \                            
- | || | | | |_| |_| | | | |  __/                            
-|___|_| |_|\__|\__,_|_| |_|\___|              _             
- / ___|___  _ __  / _(_) __ _ _   _ _ __ __ _| |_ ___  _ __ 
-| |   / _ \| '_ \| |_| |/ _  | | | | '__/ _  | __/ _ \| '__|
-| |__| (_) | | | |  _| | (_| | |_| | | | (_| | || (_) | |   
- \____\___/|_| |_|_| |_|\__, |\__,_|_|  \__,_|\__\___/|_|   
-                        |___/                               " -ForegroundColor DarkMagenta
 Write-Host "Fully automates your Intune configuration based on your preferences." -ForegroundColor Gray
 Write-Host "Created by El3ctr1cR" -ForegroundColor Gray
 Write-Host "[$version] https://github.com/El3ctr1cR/IntuneConfigurator" -ForegroundColor Gray
 
-
-# ─── Wait ───────────────────────────────────────────────────────────────────
 Write-Host ""
 Read-Host -Prompt "Press Enter to login and begin configuration"
 Clear-Host

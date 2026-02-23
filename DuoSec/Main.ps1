@@ -1,7 +1,7 @@
 # Main.ps1
-# Datto RMM Agent - Intune Deployer
-$version = "v0.1.0"
+# Duo Security - Intune Deployer
 Clear-Host
+$version = "v0.1.0"
 
 $modulePaths = Get-ChildItem -Path (Join-Path $PSScriptRoot "modules") -Recurse -Include *.psm1
 foreach ($module in $modulePaths) {
@@ -20,7 +20,8 @@ if (-not (Assert-IntuneWinAppUtil -RootPath $PSScriptRoot)) {
 
 Clear-Host
 
-Write-Host "Easily deploy Datto RMM to your Intune environment as a Win32 app." -ForegroundColor Gray
+# Reprint banner after clear
+Write-Host "Packages and deploys Duo Security Windows Logon to Intune automatically." -ForegroundColor Gray
 Write-Host "Created by El3ctr1cR" -ForegroundColor Gray
 Write-Host "[$version] https://github.com/El3ctr1cR/IntuneConfigurator" -ForegroundColor Gray
 Write-Host ""
@@ -34,25 +35,25 @@ if (-not (Connect-ToMSGraph)) {
     return
 }
 
-# Get agent
-$agentLink = Get-AgentLink
+# Collect Duo credentials
+$duoConfig = Get-DuoConfig
 
-if ([string]::IsNullOrWhiteSpace($agentLink)) {
-    Write-Host "No agent link provided. Exiting..." -ForegroundColor Yellow
+if (-not $duoConfig) {
+    Write-Host "No Duo configuration provided. Exiting..." -ForegroundColor Yellow
     return
 }
 
-# Download agent
-$buildPath  = Join-Path $PSScriptRoot "build"
-$agentFile  = Invoke-AgentDownload -AgentLink $agentLink -BuildPath $buildPath
+# Download installer
+$buildPath    = Join-Path $PSScriptRoot "build"
+$installerFile = Invoke-DuoDownload -BuildPath $buildPath
 
-if (-not $agentFile) {
-    Write-Error "Cannot proceed without the downloaded agent"
+if (-not $installerFile) {
+    Write-Error "Cannot proceed without the downloaded installer"
     return
 }
 
-# Build .intunewin file
-$intuneWinFile = Invoke-IntuneWinBuild -AgentFilePath $agentFile `
+# Build .intunewin
+$intuneWinFile = Invoke-IntuneWinBuild -AgentFilePath $installerFile `
                                        -BuildPath $buildPath `
                                        -RootPath $PSScriptRoot
 
@@ -61,14 +62,20 @@ if (-not $intuneWinFile) {
     return
 }
 
-# Deploy to intune
-$agentFileName = [System.IO.Path]::GetFileName($agentFile)
-Invoke-IntuneDeploy -IntuneWinFilePath $intuneWinFile `
-                    -AgentFileName $agentFileName `
-                    -AgentFilePath $agentFile
+# Deploy Win32 app to Intune
+$installerFileName = [System.IO.Path]::GetFileName($installerFile)
+Invoke-DuoDeploy -IntuneWinFilePath $intuneWinFile `
+                 -InstallerFileName $installerFileName `
+                 -InstallerFilePath $installerFile `
+                 -DuoConfig $duoConfig
+
+# Deploy Remediation script
+Invoke-DuoRemediationDeploy
 
 Write-Host ""
 Read-Host -Prompt "Press Enter to close the script..."
+
+Write-Host ""
 
 try {
     Disconnect-MgGraph -ErrorAction SilentlyContinue
