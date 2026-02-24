@@ -1,4 +1,4 @@
-# Main.ps1
+﻿# Main.ps1
 # Printer - Intune Deployer
 Clear-Host
 $version = "v0.1.0"
@@ -59,7 +59,7 @@ $result = Invoke-PrinterExport -PrinterName $selectedPrinter `
                                -RootPath $PSScriptRoot
 
 if (-not $result) {
-    Write-Error "Cannot proceed — printer export or packaging failed"
+    Write-Error "Cannot proceed - printer export or packaging failed"
     return
 }
 
