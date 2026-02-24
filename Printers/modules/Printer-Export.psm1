@@ -233,7 +233,7 @@ function Invoke-PrinterExport {
     # Step 4: Parse printer XML for PortName and DriverName
     Write-Host "Step 4/7 : Reading printer config from $printerXmlFileName..." -ForegroundColor Yellow
 
-    $printerXmlPath = Join-Path $unpackRoot "Printers" $printerXmlFileName
+    $printerXmlPath = Join-Path (Join-Path $unpackRoot "Printers") $printerXmlFileName
     if (-not (Test-Path $printerXmlPath)) {
         Write-Error "Printer XML not found: $printerXmlPath"
         return $null
@@ -347,7 +347,7 @@ function Invoke-PrinterExport {
     Write-Host "=== Building .intunewin Package ===" -ForegroundColor Cyan
     Write-Host ""
 
-    $toolPath = Join-Path $RootPath "tools" "IntuneWinAppUtil.exe"
+    $toolPath = Join-Path (Join-Path $RootPath "tools") "IntuneWinAppUtil.exe"
 
     if (-not (Test-Path $intunewinDir)) {
         New-Item -ItemType Directory -Path $intunewinDir -Force | Out-Null
