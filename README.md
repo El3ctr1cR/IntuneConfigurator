@@ -9,6 +9,7 @@
 | **Baseline** | Automatically creates baseline Intune configuration profiles (device restrictions, password policies, etc.) |
 | **Datto RMM** | Packages and deploys the Datto RMM agent to Intune as a Win32 app |
 | **Duo Security** | Packages and deploys Duo Security Windows Logon to Intune, including a Proactive Remediation to enforce the required registry key |
+| **Printers** | Exports a selected Windows printer (driver, port, and queue) using PrintBrm, builds a single-printer .intunewin package, uploads it to Intune as a Win32 app via Microsoft Graph, and assigns it to All Devices with a PowerShell detection rule |
 
 ## 🚀 Getting Started
 
