@@ -1,4 +1,4 @@
-﻿# modules/Printer-Deploy.psm1
+# modules/Printer-Deploy.psm1
 # Uploads the printer Win32 app to Intune via Microsoft Graph.
 
 #region - Upload helpers

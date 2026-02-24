@@ -1,4 +1,4 @@
-﻿# modules/Printer-Export.psm1
+# modules/Printer-Export.psm1
 
 $PrintBrm = "$env:windir\System32\spool\tools\PrintBrm.exe"
 

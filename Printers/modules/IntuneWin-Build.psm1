@@ -1,4 +1,4 @@
-﻿# modules/IntuneWin-Build.psm1
+# modules/IntuneWin-Build.psm1
 # Wraps IntuneWinAppUtil.exe to produce a .intunewin package
 
 $IntuneWinAppUtilUrl = "https://github.com/microsoft/Microsoft-Win32-Content-Prep-Tool/raw/master/IntuneWinAppUtil.exe"

@@ -1,4 +1,4 @@
-﻿# Main.ps1
+# Main.ps1
 # Printer - Intune Deployer
 Clear-Host
 $version = "v0.1.0"
