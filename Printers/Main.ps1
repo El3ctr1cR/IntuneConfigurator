@@ -43,7 +43,7 @@ if (-not (Connect-ToMSGraph)) {
     return
 }
 
-# ── Printer selection (returns one or more printer names) ──────────────────────
+# Printer selection (returns one or more printer names)
 $selectedPrinters = Select-Printers
 
 if (-not $selectedPrinters -or $selectedPrinters.Count -eq 0) {
@@ -51,7 +51,7 @@ if (-not $selectedPrinters -or $selectedPrinters.Count -eq 0) {
     return
 }
 
-# ── Export + deploy loop ───────────────────────────────────────────────────────
+# Export + deploy loop
 $buildRootPath = Join-Path $PSScriptRoot "build"
 
 $succeeded = @()
@@ -63,9 +63,8 @@ foreach ($printerName in $selectedPrinters) {
     $current++
 
     Write-Host ""
-    Write-Host "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" -ForegroundColor DarkCyan
-    Write-Host "  Processing $current / $total : $printerName" -ForegroundColor Cyan
-    Write-Host "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" -ForegroundColor DarkCyan
+    Write-Host "=== Processing $current / $total : $printerName ===" -ForegroundColor Cyan
+    Write-Host ""
 
     # Each printer builds into its own subfolder to avoid collisions
     $safeName  = ($printerName -replace '[\\/:*?"<>|]', '_').Trim()
@@ -77,38 +76,38 @@ foreach ($printerName in $selectedPrinters) {
                                    -RootPath    $PSScriptRoot
 
     if (-not $result) {
-        Write-Host "  ✘  Export failed for '$printerName' — skipping deploy." -ForegroundColor Red
+        Write-Host "[FAILED] Export failed for '$printerName' - skipping deploy." -ForegroundColor Red
         $failed += $printerName
         continue
     }
 
     # Deploy to Intune
-    $deployed = Invoke-PrinterDeploy -PrinterName      $printerName `
+    $deployed = Invoke-PrinterDeploy -PrinterName       $printerName `
                                      -IntuneWinFilePath $result.IntuneWinFile `
                                      -DetectScriptPath  $result.DetectScriptPath
 
     if ($deployed) {
-        Write-Host "  ✔  '$printerName' deployed successfully." -ForegroundColor Green
+        Write-Host "[OK] '$printerName' deployed successfully." -ForegroundColor Green
         $succeeded += $printerName
     }
     else {
-        Write-Host "  ✘  Deploy failed for '$printerName'." -ForegroundColor Red
+        Write-Host "[FAILED] Deploy failed for '$printerName'." -ForegroundColor Red
         $failed += $printerName
     }
 }
 
-# ── Final summary ──────────────────────────────────────────────────────────────
+# Summary
 Write-Host ""
-Write-Host "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" -ForegroundColor DarkCyan
-Write-Host "  DONE  ($($succeeded.Count) succeeded / $($failed.Count) failed)" -ForegroundColor Cyan
-Write-Host "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" -ForegroundColor DarkCyan
+Write-Host "=== Summary ===" -ForegroundColor Cyan
+Write-Host "$($succeeded.Count) succeeded / $($failed.Count) failed" -ForegroundColor Gray
 Write-Host ""
 
 foreach ($name in $succeeded) {
-    Write-Host "  ✔  $name" -ForegroundColor Green
+    Write-Host "  [OK]     $name" -ForegroundColor Green
 }
+
 foreach ($name in $failed) {
-    Write-Host "  ✘  $name" -ForegroundColor Red
+    Write-Host "  [FAILED] $name" -ForegroundColor Red
 }
 
 Write-Host ""
