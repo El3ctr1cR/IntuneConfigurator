@@ -44,7 +44,20 @@ function Get-SafeFileName {
 
 #region - Main export function
 
-function Select-Printer {
+function Select-Printers {
+    <#
+    .SYNOPSIS
+        Interactively select one or more local print queues.
+    .OUTPUTS
+        [string[]]  Array of selected printer names, or $null on failure.
+    .NOTES
+        Accepts:
+          - Single number          : 2
+          - Comma-separated list   : 1,3,5
+          - Ranges                 : 2-4
+          - Mixed                  : 1,3-5,7
+          - "all" keyword          : all
+    #>
 
     Write-Host ""
     Write-Host "=== Printer Selection ===" -ForegroundColor Cyan
@@ -102,27 +115,80 @@ function Select-Printer {
     }
 
     Write-Host ""
+    Write-Host "Selection examples: 1  |  1,3,5  |  2-4  |  1,3-5,7  |  all" -ForegroundColor DarkGray
+    Write-Host ""
 
     while ($true) {
-        Write-Host "Enter number to deploy (1-$($queues.Count)): " -ForegroundColor Yellow -NoNewline
-        $input = Read-Host
+        Write-Host "Enter selection (1-$($queues.Count)): " -ForegroundColor Yellow -NoNewline
+        $rawInput = Read-Host
 
-        if ($input -match '^\d+$') {
-            $idx = [int]$input - 1
-            if ($idx -ge 0 -and $idx -lt $queues.Count) {
-                $chosen = $queues[$idx]
-                Write-Host ""
-                Write-Host "Selected : $chosen" -ForegroundColor Green
-                Write-Host ""
-                return $chosen
+        $rawInput = $rawInput.Trim()
+
+        # "all" shortcut
+        if ($rawInput -ieq "all") {
+            Write-Host ""
+            Write-Host "Selected all $($queues.Count) printer(s):" -ForegroundColor Green
+            $queues | ForEach-Object { Write-Host "  - $_" -ForegroundColor White }
+            Write-Host ""
+            return $queues
+        }
+
+        # Parse comma-separated tokens, each of which may be a range (N-M) or single number
+        $indices = [System.Collections.Generic.HashSet[int]]::new()
+        $parseOk = $true
+
+        foreach ($token in ($rawInput -split ',')) {
+            $token = $token.Trim()
+
+            if ($token -match '^\d+$') {
+                # Single number
+                $indices.Add([int]$token) | Out-Null
+            }
+            elseif ($token -match '^(\d+)-(\d+)$') {
+                # Range
+                $from = [int]$Matches[1]
+                $to   = [int]$Matches[2]
+
+                if ($from -gt $to) {
+                    Write-Host "  Invalid range '$token' (start > end)." -ForegroundColor Red
+                    $parseOk = $false
+                    break
+                }
+
+                $from..$to | ForEach-Object { $indices.Add($_) | Out-Null }
+            }
+            else {
+                Write-Host "  Unrecognised token: '$token'." -ForegroundColor Red
+                $parseOk = $false
+                break
             }
         }
 
-        Write-Host "Invalid selection. Please enter a number between 1 and $($queues.Count)." -ForegroundColor Red
+        if (-not $parseOk) {
+            Write-Host "  Please try again." -ForegroundColor Red
+            continue
+        }
+
+        # Validate all indices are in range
+        $outOfRange = $indices | Where-Object { $_ -lt 1 -or $_ -gt $queues.Count }
+        if ($outOfRange) {
+            Write-Host "  Number(s) out of range: $($outOfRange -join ', '). Valid range is 1-$($queues.Count)." -ForegroundColor Red
+            continue
+        }
+
+        # Map 1-based indices to printer names (sorted to preserve display order)
+        $chosen = $indices | Sort-Object | ForEach-Object { $queues[$_ - 1] }
+
+        Write-Host ""
+        Write-Host "Selected $($chosen.Count) printer(s):" -ForegroundColor Green
+        $chosen | ForEach-Object { Write-Host "  - $_" -ForegroundColor White }
+        Write-Host ""
+
+        return $chosen
     }
 }
 
-Export-ModuleMember -Function Select-Printer
+Export-ModuleMember -Function Select-Printers
 
 function Invoke-PrinterExport {
     param(
@@ -398,4 +464,87 @@ function Invoke-PrinterExport {
 
 #endregion
 
-Export-ModuleMember -Function Invoke-PrinterExport
+function Invoke-PrinterExportAll {
+    <#
+    .SYNOPSIS
+        Interactively select one or more printers and build a separate
+        Intune .intunewin package for each one.
+    .PARAMETER BuildRootPath
+        Parent folder under which a per-printer subfolder is created for
+        each build (e.g. C:\PrinterBuild).
+    .PARAMETER RootPath
+        Root of the repository / project containing the scripts\ and
+        tools\ folders (same as the original RootPath parameter).
+    #>
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$BuildRootPath,
+
+        [Parameter(Mandatory = $true)]
+        [string]$RootPath
+    )
+
+    # Let the user pick one or more printers
+    $selectedPrinters = Select-Printers
+    if (-not $selectedPrinters) {
+        Write-Host "No printers selected. Aborting." -ForegroundColor Red
+        return
+    }
+
+    $results  = @{}
+    $failed   = @()
+    $total    = $selectedPrinters.Count
+    $current  = 0
+
+    foreach ($printerName in $selectedPrinters) {
+        $current++
+        Write-Host ""
+        Write-Host "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" -ForegroundColor DarkCyan
+        Write-Host "  Printer $current / $total : $printerName" -ForegroundColor Cyan
+        Write-Host "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" -ForegroundColor DarkCyan
+
+        # Each printer gets its own isolated build folder so they don't
+        # interfere with each other (the full export is re-done per printer).
+        $safeName  = Get-SafeFileName -Name $printerName
+        $buildPath = Join-Path $BuildRootPath $safeName
+
+        $result = Invoke-PrinterExport `
+            -PrinterName $printerName `
+            -BuildPath   $buildPath `
+            -RootPath    $RootPath
+
+        if ($result) {
+            $results[$printerName] = $result
+            Write-Host "  ✔  $printerName — package ready." -ForegroundColor Green
+        }
+        else {
+            $failed += $printerName
+            Write-Host "  ✘  $printerName — export failed (see errors above)." -ForegroundColor Red
+        }
+    }
+
+    # Summary
+    Write-Host ""
+    Write-Host "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" -ForegroundColor DarkCyan
+    Write-Host "  SUMMARY  ($($results.Count) succeeded / $($failed.Count) failed)" -ForegroundColor Cyan
+    Write-Host "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" -ForegroundColor DarkCyan
+    Write-Host ""
+
+    foreach ($name in $results.Keys) {
+        Write-Host "  ✔  $name" -ForegroundColor Green
+        Write-Host "       .intunewin : $($results[$name].IntuneWinFile)" -ForegroundColor DarkGray
+        Write-Host "       detect.ps1 : $($results[$name].DetectScriptPath)" -ForegroundColor DarkGray
+    }
+
+    if ($failed.Count -gt 0) {
+        Write-Host ""
+        foreach ($name in $failed) {
+            Write-Host "  ✘  $name  (failed)" -ForegroundColor Red
+        }
+    }
+
+    Write-Host ""
+    return $results
+}
+
+Export-ModuleMember -Function Invoke-PrinterExport, Invoke-PrinterExportAll, Select-Printers
