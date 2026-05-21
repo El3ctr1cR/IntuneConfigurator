@@ -35,7 +35,7 @@ function Invoke-PrintBrm {
 
 function Get-SafeFileName {
     param([string]$Name)
-    $safe = $Name -replace '[\\/:*?"<>|]', '_'
+    $safe = $Name -replace '[\\/:*?"<>| ]', '_'
     $safe = $safe.Trim()
     return $safe
 }

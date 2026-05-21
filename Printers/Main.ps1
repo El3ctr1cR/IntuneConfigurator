@@ -67,7 +67,7 @@ foreach ($printerName in $selectedPrinters) {
     Write-Host ""
 
     # Each printer builds into its own subfolder to avoid collisions
-    $safeName  = ($printerName -replace '[\\/:*?"<>|]', '_').Trim()
+    $safeName  = ($printerName -replace '[\\/:*?"<>| ]', '_').Trim()
     $buildPath = Join-Path $buildRootPath $safeName
 
     # Export, edit, repack, package
