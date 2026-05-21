@@ -208,7 +208,7 @@ function Invoke-PrinterExport {
     if (Test-Path $fullExportFile) { Remove-Item $fullExportFile -Force }
 
     try {
-        Invoke-PrintBrm -ArgString "-b -f $fullExportFile" | Out-Null
+        Invoke-PrintBrm -ArgString "-b -f `"$fullExportFile`"" | Out-Null
         Write-Host "  Exported to: $fullExportFile" -ForegroundColor Green
     }
     catch {
@@ -223,7 +223,7 @@ function Invoke-PrinterExport {
     New-Item -ItemType Directory -Path $unpackDir -Force | Out-Null
 
     try {
-        $unpackOutput = Invoke-PrintBrm -ArgString "-r -d $unpackDir -f $fullExportFile"
+        $unpackOutput = Invoke-PrintBrm -ArgString "-r -d `"$unpackDir`" -f `"$fullExportFile`""
         Write-Host "  Unpacked to: $unpackDir" -ForegroundColor Green
         if ($unpackOutput) {
             Write-Host "  PrintBrm output:" -ForegroundColor DarkGray
@@ -352,7 +352,7 @@ function Invoke-PrinterExport {
     if (Test-Path $singleExportFile) { Remove-Item $singleExportFile -Force }
 
     try {
-        Invoke-PrintBrm -ArgString "-b -d $unpackRoot -f $singleExportFile" | Out-Null
+        Invoke-PrintBrm -ArgString "-b -d `"$unpackRoot`" -f `"$singleExportFile`"" | Out-Null
         Write-Host "  Repacked to: $singleExportFile" -ForegroundColor Green
     }
     catch {
